@@ -1,9 +1,9 @@
 import os 
-from styleframe import StyleFrame, Styler, utils
 import pandas as pd
 from datetime import date
+from utils import *
 
-def checar_Rapeel(biu_file_path, directory, inicio_biu):
+def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_rapeel_path):
     biu =  pd.read_excel(biu_file_path)
     # Carrega dataframe com dados do skate
     skate_ug = pd.read_parquet(f"{directory}skate_ug.gzip")
@@ -32,6 +32,7 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu):
     checar_prev_OC = checar_prev_OC[((checar_prev_OC.DatPrevisaoSFGComercial - checar_prev_OC.PrevisaoOC_Regra_TS).abs()) > pd.Timedelta(120,"D")].drop_duplicates(subset="IdeUsinaOutorga")
     checar_prev_OC = pd.merge(skate_usinas[["IdeUsinaOutorga","DatMonitoramento"]],checar_prev_OC,on="IdeUsinaOutorga",how="right")
     checar_prev_OC = checar_prev_OC[checar_prev_OC.DatMonitoramento > inicio_biu]
+    clear_console()
     for fiscal in lista_fiscais:
         usinas_fiscal = biu[biu.Fiscal == fiscal].IdeUsinaOutorga
         mask_fiscal = skate_usinas.IdeUsinaOutorga.isin(usinas_fiscal)
@@ -41,14 +42,33 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu):
         quant_just_checar = checar_justificativa[checar_justificativa.Fiscal == fiscal].shape[0]
         quant_checar_OC = checar_prev_OC[checar_prev_OC.Fiscal == fiscal].shape[0]
         progresso = 100*quant_feitas_fiscal/quant_total
-        print(f"{fiscal}: {progresso:.1f} %  - {quant_feitas_fiscal} feitas  - {quant_total - quant_feitas_fiscal} a fazer  - {quant_previsoes_IO_checar} previsões IO a serem checadas - {quant_just_checar} justificativas a serem checadas - {quant_checar_OC} datas de previsão OC a serem checadas.")
+        print(f"{fiscal}: {progresso:.1f} %  - {quant_feitas_fiscal} feitas  - {quant_total - quant_feitas_fiscal} a fazer  - {quant_previsoes_IO_checar} previsões IO a serem checadas - {quant_just_checar} justificativas a serem checadas - {quant_checar_OC} datas de previsão OC a serem checadas.\n")
         if fiscal == "Márcio":
             #raise
             pass  
+    print("\n"*3)
     checar_IO = skate_usinas[mask_checar_IO & mask_feita][["IdeUsinaOutorga","NomUsina","DatPrevisaoIniciobra","DatInicioObraOutorgado","DatPrevistaAprovacaoIII","Fiscal","DatMonitoramento"]]
     a_fazer = skate_usinas[(~mask_feita)][["IdeUsinaOutorga","NomUsina","Fiscal","DatMonitoramento"]]
     a_fazer = a_fazer[(a_fazer.Fiscal != "Endrizzo (AUTOM)")]
-    checar_IO.to_excel(f'./checar_IO_{hoje.strftime("%D").replace("/","_")}.xlsx',index=False)
-    a_fazer.to_excel(f'./a_fazer_{hoje.strftime("%D").replace("/","_")}.xlsx',index=False)
-    checar_justificativa.to_excel(f'./checar_justificativa{hoje.strftime("%D").replace("/","_")}.xlsx',index=False)
-    checar_prev_OC.to_excel(f'./checar_prev_OC_{hoje.strftime("%D").replace("/","_")}.xlsx',index=False)
+
+    save_files_path = os.path.join(
+        checar_rapeel_path,
+        hoje.strftime("%Y_%m_%d")
+    )
+    create_folder(save_files_path)
+
+    checar_IO.to_excel(os.path.join(
+        save_files_path,
+        'checar_IO.xlsx'),index=False)
+
+    a_fazer.to_excel(os.path.join(
+        save_files_path,
+        'a_fazer.xlsx'),index=False)
+
+    checar_justificativa.to_excel(os.path.join(
+        save_files_path,
+        'checar_justificativa.xlsx'),index=False)
+
+    checar_prev_OC.to_excel(os.path.join(
+        save_files_path,
+       'checar_prev_OC.xlsx'),index=False)

@@ -1,101 +1,121 @@
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db
+from checar_rapeel import checar_Rapeel
 import pandas as pd
-from datetime import date
-import os,sys
-from win32com.shell import shell, shellcon
+import os
+import sys
 from utils import *
-import re
+from tkinter import Tk     # from tkinter import Tk for Python 3.x
+from tkinter.filedialog import askopenfilename
+import psutil
+from datetime import date
 
-root = get_standard_folder_path("Documents")
-hoje =  pd.to_datetime(date.today())
+
+hoje = pd.to_datetime(date.today())
 hoje_str = hoje.strftime(r'%Y_%m_%d')
 skate_downloads_folder_name = "SKATE_Downloads"
 root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
-download_path = os.path.join(root_path,skate_downloads_folder_name)
-previsoes_path = os.path.join(root_path,"Previsoes")
+download_path = os.path.join(root_path, skate_downloads_folder_name)
+previsoes_path = os.path.join(root_path, "Previsoes")
+checar_rapeel_path = os.path.join(root_path, "Checar_Rapeel")
 
 
 def create_previsor_folders():
+    # Cria pastas padrão necessárias
     create_folder(root_path)
     create_folder(download_path)
     create_folder(previsoes_path)
-
-
-def get_num(valid_nums):
-    num = input("")
-    msg_error = f"{num} não é uma opção válida."
-    try:
-        num = int(num)
-    except ValueError:
-        print(msg_error)
-        return -1
-    if num not in valid_nums:
-        print(msg_error)
-        return -1
-    return num
-
-
-def get_date():
-    data_input = input("Data no formato DD/MM/YYYY: ")
-    msg_error = f"{data_input} não é uma data válida."
-    try:
-        data_input =  re.sub(r"\s", "", data_input, 0)
-        data = re.findall(r"(\d{2})/(\d{2})/(\d{4})", data_input)[0]
-        dia, mes, ano = [int(el) for el in data]
-        data = pd.Timestamp(day=dia,month=mes,year=ano)
-    except:
-        raise ValueError(msg_error)
-    return data
-
-
-def show_options(dict):
-    print("Escolha uma opção:")
-    for num,text in dict.items():
-        print(f"{num}) - {text}")
+    create_folder(checar_rapeel_path)
 
 
 def calc_previsao():
-    global result, df
-    print("\n" + " Baixando arquivos ".center(60,"*") + "\n")
-    directory = download_db(download_path,previsoes_path,lista_download=["skate_leilao","skate_ug" ,"skate_usinas"])
-    print("\n" +"*".center(60,"*") + "\n")
-    result,df = calcular_previsao(directory)
-    return result,df
+    # Calcula previsão
+    global result, skate_merged
+    print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
+    directory = download_db(download_path, lista_download=[
+                            "skate_leilao", "skate_ug", "skate_usinas"])
+    print("\n" + "*".center(60, "*") + "\n")
+    result, skate_merged = calcular_previsao(directory)
+    skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
+                                 'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador']].copy()
+    skate_export["Previsao_OC"] = skate_export.Previsao_OC.dt.normalize()
+    skate_export["DatMonitoramento"] = skate_export.DatMonitoramento.dt.normalize()
+    return result, skate_export
+
+
+def get_biu():
+    Tk().withdraw()
+    filename = askopenfilename()
+    return filename
 
 
 def menu_principal():
-    global result,df
+    # Apresenta menu principal
+    global skate_merged, skate_export
+    global result, df
     dict_menu_principal = {
-        0 : "Sair",
-        1 : "Calcular previsão da base de dados",
-        2 : "Atualizar base de dados",
-        #3 : "Calcular previsão de teste",
+        0: "Sair",
+        1: "Calcular previsão da base de dados",
+        2: "Atualizar base de dados",
+        3: "Checar Rapeel",
 
     }
     show_options(dict_menu_principal)
-    num = get_num(dict_menu_principal)
-    if num == 0:
+    opcao_menu = get_num(dict_menu_principal)
+    if opcao_menu == 0:
         print("Sessão terminada.")
         return 0
 
-    if num == 1:
+    if opcao_menu == 1:
+        clear_console()
         print("Calculando previsão...")
-        result,df = calc_previsao()
+        result, skate_export = calc_previsao()
         if result == "Ok":
-            print("Exportando arquivo com previsões...")
-            previsao_file= os.path.join(previsoes_path,f"Previsao_OC_{hoje_str}.xlsx")
-            df.to_excel(previsao_file,index=False)
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print(f"Arquivo exportado: {previsao_file}\n\n")
+            minutos_estimado = ((2901 / psutil.cpu_freq().max)
+                                * (skate_export.shape[0] / 50_000) * 24)/60
+            print(
+                f"Exportando arquivo com previsões... Previsão: {minutos_estimado:.2f} minutos.")
+            previsao_file = os.path.join(
+                previsoes_path, f"Previsao_OC_{hoje_str}.xlsx")
+            previsor_detalhe = os.path.join(
+                previsoes_path, f"Previsao_OC_detalhada_{hoje_str}.xlsx")
+            skate_export.to_excel(previsao_file, index=False)
+            print(f"Arquivo exportado: {previsao_file}")
+            minutos_estimado = ((2901 / psutil.cpu_freq().max)
+                                * (skate_merged.shape[0] / 50_000) * 120)/60
+            print(
+                f"Deseja exportar arquivo detalahado? Previsão: {minutos_estimado:.2f} minutos.")
 
-    if num == 2:
-        directory = download_db(download_path,previsoes_path,force_download=True, lista_download=["skate_leilao","skate_ug" ,"skate_usinas"])
+            options = {
+                0: "Não",
+                1: "Sim"
+            }
+            show_options(options)
+            opcao_previsao = get_num(options)
+
+            if opcao_previsao:
+                print("Exportando arquivo de previsão detalhado...")
+                skate_merged.to_excel(previsor_detalhe, index=False)
+                print(f"Arquivo exportado: {previsor_detalhe}\n\n")
+
+    if opcao_menu == 2:
+        directory = download_db(download_path, force_download=True, lista_download=[
+                                "skate_ug", "skate_usinas", "leilao"])
+
+    if opcao_menu == 3:
+        global biu
+        print("Data do início do BIU:")
+        inicio_biu = get_date()
+        print("Selecione o arquivo do BIU")
+        directory = download_db(download_path, force_download=False, lista_download=[
+                                "rapeel", "skate_ug", "skate_usinas"])
+        biu_file_path = get_biu()
+        checar_Rapeel(biu_file_path, directory, inicio_biu, checar_rapeel_path)
+    return opcao_menu
 
 
 create_previsor_folders()
-
-while(True):
-    option = menu_principal()
-    if option == 0:
+while (True):
+    opcao_menu = menu_principal()
+    if opcao_menu == 0:
         break

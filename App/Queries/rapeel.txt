@@ -1,0 +1,8 @@
+SELECT [DthEnvio]
+      ,[IdeUsinaOutorga]
+      ,[NomUsina]
+      ,[NomAtividadeIII]
+      ,[DatOutorgadaIII]
+      ,[DatPrevistaAprovacaoIII]
+      ,[DatPrevistaMaximaIII]
+  FROM [FiscalizacaoGeracao].[SKT].[vRAPEELCronograma]
