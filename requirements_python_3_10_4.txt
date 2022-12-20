@@ -1,0 +1,8 @@
+matplotlib==3.5.2 
+numpy==1.23.0 
+pandas==1.4.3
+pyodbc==4.0.32 
+scipy==1.8.1 
+openpyxl==3.0.10 
+pyarrow==8.0.0
+SQLAlchemy==1.4.40
