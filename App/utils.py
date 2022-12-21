@@ -11,9 +11,9 @@ if sys.platform == "win32":
     from win32com.shell import shell, shellcon # type: ignore
 
 
-def get_num(valid_nums, return_on_error=0):
+def get_num(valid_nums, return_on_error=0, input_msg = "Opção: ",):
     # Recebe um inteiro dado uma lista de valores válidos
-    num = input("")
+    num = input(input_msg)
     msg_error = f"{num} não é uma opção válida."
     try:
         num = int(num)

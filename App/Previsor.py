@@ -1,11 +1,13 @@
+import os
+os.chdir(os.path.dirname(__file__))
+
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db
 from checar_rapeel import checar_Rapeel
 import pandas as pd
-import os
 import sys
 from utils import *
-from tkinter import Tk     # from tkinter import Tk for Python 3.x
+from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 import psutil
 from datetime import date
@@ -80,11 +82,11 @@ def menu_principal():
             previsor_detalhe = os.path.join(
                 previsoes_path, f"Previsao_OC_detalhada_{hoje_str}.xlsx")
             skate_export.to_excel(previsao_file, index=False)
-            print(f"Arquivo exportado: {previsao_file}")
+            print(f"Arquivo exportado: {previsao_file}\n")
             minutos_estimado = ((2901 / psutil.cpu_freq().max)
                                 * (skate_merged.shape[0] / 50_000) * 120)/60
             print(
-                f"Deseja exportar arquivo detalahado? Previsão: {minutos_estimado:.2f} minutos.")
+                f"Deseja exportar arquivo detalahado? Previsão: {minutos_estimado:.2f} minutos.\n")
 
             options = {
                 0: "Não",
@@ -113,7 +115,7 @@ def menu_principal():
         checar_Rapeel(biu_file_path, directory, inicio_biu, checar_rapeel_path)
     return opcao_menu
 
-
+clear_console()
 create_previsor_folders()
 while (True):
     opcao_menu = menu_principal()
