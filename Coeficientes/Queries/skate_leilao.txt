@@ -1,0 +1,5 @@
+SELECT [IdeUsinaOutorga]
+      ,[SigTipoGeracao]
+      ,[NomUsina]
+      ,[DatInicioSuprimento]
+  FROM [FiscalizacaoGeracao].[SKT].[vMonitoramentoLeilao]

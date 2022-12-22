@@ -104,10 +104,12 @@ def menu_principal():
                 skate_merged.to_excel(previsor_detalhe, index=False)
                 print(f"Arquivo exportado: {previsor_detalhe}\n\n")
             perguntar_abrir_pasta(previsoes_path)
+            _ = input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 2:
         directory = download_db(download_path, force_download=True, lista_download=[
-                                "skate_ug", "skate_usinas", "leilao"])
+                                "skate_ug", "skate_usinas", "skate_leilao"])
+        _ = input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 3:
         global biu
