@@ -33,10 +33,8 @@ def create_previsor_folders():
 def calc_previsao():
     # Calcula previsão
     global result, skate_merged
-    print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     directory = download_db(download_path, lista_download=[
                             "skate_leilao", "skate_ug", "skate_usinas"])
-    print("\n" + "*".center(60, "*") + "\n")
     result, skate_merged = calcular_previsao(directory)
     skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
                                  'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador']].copy()
@@ -52,6 +50,7 @@ def get_biu():
 
 
 def menu_principal():
+    clear_console()
     # Apresenta menu principal
     global skate_merged, skate_export
     global result, df
@@ -64,6 +63,11 @@ def menu_principal():
     }
     show_options(dict_menu_principal)
     opcao_menu = get_num(dict_menu_principal)
+
+    clear_console()
+    print(dict_menu_principal[opcao_menu])
+    print("\n")
+
     if opcao_menu == 0:
         print("Sessão terminada.")
         return 0
@@ -73,20 +77,20 @@ def menu_principal():
         print("Calculando previsão...")
         result, skate_export = calc_previsao()
         if result == "Ok":
-            minutos_estimado = ((2901 / psutil.cpu_freq().max)
-                                * (skate_export.shape[0] / 50_000) * 24)/60
+            segundos_estimado = ((2901 / psutil.cpu_freq().max)
+                                * (skate_export.shape[0] / 50_000) * 24)
             print(
-                f"Exportando arquivo com previsões... Previsão: {minutos_estimado:.2f} minutos.")
+                f"Exportando arquivo com previsões... Previsão: {segundos_estimado:.0f} segundos.")
             previsao_file = os.path.join(
                 previsoes_path, f"Previsao_OC_{hoje_str}.xlsx")
             previsor_detalhe = os.path.join(
                 previsoes_path, f"Previsao_OC_detalhada_{hoje_str}.xlsx")
             skate_export.to_excel(previsao_file, index=False)
             print(f"Arquivo exportado: {previsao_file}\n")
-            minutos_estimado = ((2901 / psutil.cpu_freq().max)
-                                * (skate_merged.shape[0] / 50_000) * 120)/60
+            segundos_estimado = ((2901 / psutil.cpu_freq().max)
+                                * (skate_merged.shape[0] / 50_000) * 120)
             print(
-                f"Deseja exportar arquivo detalahado? Previsão: {minutos_estimado:.2f} minutos.\n")
+                f"Deseja exportar arquivo detalahado? Previsão: {segundos_estimado:.0f} segundos.\n")
 
             options = {
                 0: "Não",
@@ -99,6 +103,7 @@ def menu_principal():
                 print("Exportando arquivo de previsão detalhado...")
                 skate_merged.to_excel(previsor_detalhe, index=False)
                 print(f"Arquivo exportado: {previsor_detalhe}\n\n")
+            perguntar_abrir_pasta(previsoes_path)
 
     if opcao_menu == 2:
         directory = download_db(download_path, force_download=True, lista_download=[
@@ -108,11 +113,13 @@ def menu_principal():
         global biu
         print("Data do início do BIU:")
         inicio_biu = get_date()
-        print("Selecione o arquivo do BIU")
+        print("Selecione o arquivo do BIU\n")
+        biu_file_path = get_biu()
         directory = download_db(download_path, force_download=False, lista_download=[
                                 "rapeel", "skate_ug", "skate_usinas"])
-        biu_file_path = get_biu()
+        
         checar_Rapeel(biu_file_path, directory, inicio_biu, checar_rapeel_path)
+        _ = input("Aperte enter para retornar ao menu.")
     return opcao_menu
 
 clear_console()

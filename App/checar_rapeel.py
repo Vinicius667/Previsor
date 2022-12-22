@@ -20,7 +20,11 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_rapeel_path):
     mask_feita = skate_usinas.DatMonitoramento > inicio_biu
     mask_previsao_passado = skate_usinas.DatPrevisaoIniciobra < hoje
     mask_previsao_IO_proxima = skate_usinas.DatPrevisaoIniciobra < futuro_proximo
-    mask_checar_IO =   ((skate_usinas.DatPrevisaoIniciobra < skate_usinas.DatInicioObraOutorgado)  & (skate_usinas.DatPrevisaoIniciobra < skate_usinas.DatPrevistaAprovacaoIII)) | mask_previsao_passado | mask_previsao_IO_proxima
+    mask_checar_IO =   ((
+        (skate_usinas.DatPrevisaoIniciobra < skate_usinas.DatInicioObraOutorgado)  & 
+        (skate_usinas.DatPrevisaoIniciobra < skate_usinas.DatPrevistaAprovacaoIII)) | mask_previsao_passado | 
+        (mask_previsao_IO_proxima & (skate_usinas.DatPrevistaAprovacaoIII > futuro_proximo)))
+
     biu_justificativa = biu[~biu.Justificativadaprevisao_new.str.startswith("Analisar")]
     checar_justificativa = pd.merge(biu_justificativa[["IdeUsinaOutorga","NomUsina","Justificativadaprevisao_new"]],
             skate_usinas[mask_feita][["IdeUsinaOutorga","DscJustificativaPrevisao","Fiscal"]],
@@ -72,3 +76,7 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_rapeel_path):
     checar_prev_OC.to_excel(os.path.join(
         save_files_path,
        'checar_prev_OC.xlsx'),index=False)
+
+    print(f"Arquivos para checagem exportados: {save_files_path}\n")
+
+    perguntar_abrir_pasta(save_files_path)

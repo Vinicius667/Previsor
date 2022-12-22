@@ -5,7 +5,7 @@ import os
 import re
 import pickle
 import pandas as pd
-
+import subprocess
 
 if sys.platform == "win32":
     from win32com.shell import shell, shellcon # type: ignore
@@ -110,6 +110,30 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
+def open_folder(path):
+    if sys.platform == "win32":
+        os.startfile(path)
+    elif sys.platform == "linux":
+        subprocess.Popen(["xdg-open", path])
+    else:
+        raise ValueError("OS não suportada")
+
+def perguntar_abrir_pasta(path, msg = "Deseja abrir pasta com os arquivos exportados?"):
+    print("\n")
+    print(msg)
+
+    options = {
+        0: "Não",
+        1: "Sim"
+    }
+    show_options(options)
+    opcao_pasta= get_num(options)
+
+    if opcao_pasta:
+        open_folder(path)
+
 if __name__ == "__main__":
     clear_console()
-    print("Ok")
+    path = os.path.dirname(__file__)
+    open_folder(path)
+

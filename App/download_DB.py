@@ -15,6 +15,7 @@ skate_engine = create_odbc_engine(server,database)
 
 
 def download_db(download_path = None, queries_path = None, lista_download = ["skate_leilao","skate_ug" ,"skate_usinas","rapeel"],data=False,force_download=False):
+    print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
         skate_downloads_folder_name = "SKATE_Downloads"
         root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
@@ -70,6 +71,7 @@ def download_db(download_path = None, queries_path = None, lista_download = ["sk
         else:
             print(f"{db_name} já foi baixado hoje: {log[db_name]}.  Portanto não foi baixado novamente.")
     save_pickle(log,log_path)
+    print("\n" + "*".center(60, "*") + "\n")
     return directory
 
 
