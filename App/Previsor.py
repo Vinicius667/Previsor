@@ -4,6 +4,7 @@ os.chdir(os.path.dirname(__file__))
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db
 from checar_rapeel import checar_Rapeel
+from BIU import biu
 import pandas as pd
 import sys
 from utils import *
@@ -59,6 +60,7 @@ def menu_principal():
         1: "Calcular previsão da base de dados",
         2: "Atualizar base de dados",
         3: "Checar Rapeel",
+        4: "Gerar BIU"
 
     }
     show_options(dict_menu_principal)
@@ -122,6 +124,10 @@ def menu_principal():
         
         checar_Rapeel(biu_file_path, directory, inicio_biu, checar_rapeel_path)
         _ = input("Aperte enter para retornar ao menu.")
+    
+    if opcao_menu == 4: 
+        pass
+        
     return opcao_menu
 
 clear_console()

@@ -29,7 +29,7 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_rapeel_path):
     checar_justificativa = pd.merge(biu_justificativa[["IdeUsinaOutorga","NomUsina","Justificativadaprevisao_new"]],
             skate_usinas[mask_feita][["IdeUsinaOutorga","DscJustificativaPrevisao","Fiscal"]],
             how="inner")
-    checar_justificativa= checar_justificativa[(checar_justificativa.Justificativadaprevisao_new != checar_justificativa.DscJustificativaPrevisao) & (checar_justificativa.Fiscal != "Endrizzo (AUTOM)")]
+    checar_justificativa= checar_justificativa[(checar_justificativa.Justificativadaprevisao_new != checar_justificativa.DscJustificativaPrevisao)]
     biu_manual = biu[biu.manual.notna() & biu.PrevisaoOC_Regra_TS.notna()][["IdeUsinaOutorga","NomUsina","PrevisaoOC_Regra_TS","Fiscal"]]
     skate_ug_sem_OC = skate_ug[skate_ug.DatLiberOpComerRealizado.isna()][["IdeUsinaOutorga","NumUgUsina","DatPrevisaoSFGComercial"]]
     checar_prev_OC = pd.merge(skate_ug_sem_OC,biu_manual,how="inner")
@@ -53,7 +53,6 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_rapeel_path):
     print("\n"*3)
     checar_IO = skate_usinas[mask_checar_IO & mask_feita][["IdeUsinaOutorga","NomUsina","DatPrevisaoIniciobra","DatInicioObraOutorgado","DatPrevistaAprovacaoIII","Fiscal","DatMonitoramento"]]
     a_fazer = skate_usinas[(~mask_feita)][["IdeUsinaOutorga","NomUsina","Fiscal","DatMonitoramento"]]
-    a_fazer = a_fazer[(a_fazer.Fiscal != "Endrizzo (AUTOM)")]
 
     save_files_path = os.path.join(
         checar_rapeel_path,
