@@ -1,0 +1,3 @@
+call ACTIVATE_CONDA_FILE
+activate ENVIRONMENT
+auto-py-to-exe
