@@ -1,6 +1,7 @@
 import os,sys
 
-# Caso o escript esteja sendo executado a partir de outro diretório
+
+
 from download_DB import download_db
 
 import pandas as pd
@@ -32,9 +33,9 @@ def calcular_previsao(directory):
 
 
     # Carrega dataframe com dados do skate
-    skate_ug = pd.read_parquet(f"{directory}skate_ug.gzip")[lista_colunas_ug]
-    skate_usinas = pd.read_parquet(f"{directory}skate_usinas.gzip")[lista_colunas_usinas]
-    skate_leilao = pd.read_parquet(f"{directory}skate_leilao.gzip")
+    vmonitoramentoug = pd.read_parquet(f"{directory}vmonitoramentoug.gzip")[lista_colunas_ug]
+    vmonitoramentousina = pd.read_parquet(f"{directory}vmonitoramentousina.gzip")[lista_colunas_usinas]
+    vmonitoramentoleilao = pd.read_parquet(f"{directory}vmonitoramentoleilao.gzip")
 
     # Carrega dataframe com informações do previsor
     tabela_previsor = pd.read_parquet("./Tabelas_Previsor/tabela_previsor.gzip")
@@ -51,24 +52,24 @@ def calcular_previsao(directory):
 
     # Remove usinas que entraram em operação comercial.
     #print(" Quantidade de UGs ".center(60,"*") + "\n")
-    #print(f"{skate_ug.shape[0]} UGs no SKATE.")
-    skate_ug = skate_ug[skate_ug.DatLiberOpComerRealizado.isna()].copy() 
-    #print(f"{skate_ug.shape[0]} UGs sem liberação para entrada em operação comercial.")
+    #print(f"{vmonitoramentoug.shape[0]} UGs no SKATE.")
+    vmonitoramentoug = vmonitoramentoug[vmonitoramentoug.DatLiberOpComerRealizado.isna()].copy() 
+    #print(f"{vmonitoramentoug.shape[0]} UGs sem liberação para entrada em operação comercial.")
     #print("*".center(60,"*") + "\n")
 
 
     # Para usinas com mais de um data de início de suprimento, mantém apenas o primeiro. 
-    skate_leilao.dropna(subset="DatInicioSuprimento",inplace=True)
-    skate_leilao["DatInicioSuprimento"] = pd.to_datetime(skate_leilao["DatInicioSuprimento"])
-    skate_leilao = skate_leilao.loc[skate_leilao.groupby('IdeUsinaOutorga').DatInicioSuprimento.idxmin()]
+    vmonitoramentoleilao.dropna(subset="DatInicioSuprimento",inplace=True)
+    vmonitoramentoleilao["DatInicioSuprimento"] = pd.to_datetime(vmonitoramentoleilao["DatInicioSuprimento"])
+    vmonitoramentoleilao = vmonitoramentoleilao.loc[vmonitoramentoleilao.groupby('IdeUsinaOutorga').DatInicioSuprimento.idxmin()]
 
 
     # Junta informações de leilão com UGs
-    skate_ug = skate_ug.merge(skate_leilao[["IdeUsinaOutorga","DatInicioSuprimento"]],on="IdeUsinaOutorga",how="left")
+    vmonitoramentoug = vmonitoramentoug.merge(vmonitoramentoleilao[["IdeUsinaOutorga","DatInicioSuprimento"]],on="IdeUsinaOutorga",how="left")
 
 
     # Junta informações de referentes às usinas com informações referentes às UGs
-    skate_merged = skate_ug.merge(skate_usinas,on="IdeUsinaOutorga",how="left")
+    skate_merged = vmonitoramentoug.merge(vmonitoramentousina,on="IdeUsinaOutorga",how="left")
 
     df_acr_sem_leilao = skate_merged[(skate_merged.DscComercializacaoEnergia=="ACR") &  (skate_merged.DatInicioSuprimento.isna())]
 
@@ -317,7 +318,7 @@ if __name__ == "__main__":
     # Caminho da pasta dos resultados das previsões
     previsoes_path = os.path.join(root_path,"Previsoes")
 
-    directory = download_db(download_path,force_download=True, lista_download=["skate_leilao","skate_ug" ,"skate_usinas"])
+    directory = download_db(download_path,force_download=True, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
 
     print("*".center(60,"*") + "\n")
     result,df = calcular_previsao(directory)

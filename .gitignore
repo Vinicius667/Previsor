@@ -3,6 +3,13 @@ Not_used/
 App/Arquivos Teste/
 *.pdf
 *.xlsx
+!Coeficientes/Inputs/*.xlsx
+*.gzip
+
+Coeficientes/Outputs/
+Coeficientes/Intermediarios/
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

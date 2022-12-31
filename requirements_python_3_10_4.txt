@@ -7,4 +7,3 @@ openpyxl==3.0.10
 pyarrow==8.0.0
 SQLAlchemy==1.4.40
 psutil==5.9.4
-pyodbc==4.0.35

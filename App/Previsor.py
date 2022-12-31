@@ -1,9 +1,15 @@
 import os
-os.chdir(os.path.dirname(__file__))
+
+# Caso o escript esteja sendo executado a partir de outro diretório
+# muda o working directory para o caminho do script
+script_path = os.path.dirname(__file__)
+if not os.path.samefile(script_path,os.getcwd()):
+    os.chdir(script_path)
+    print(f"Working directory was changed: {script_path}")
 
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db
-from checar_rapeel import checar_Rapeel
+from checar_vrapeelcronograna import checar_Rapeel
 from BIU import biu
 import pandas as pd
 import sys
@@ -20,7 +26,7 @@ skate_downloads_folder_name = "SKATE_Downloads"
 root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
 download_path = os.path.join(root_path, skate_downloads_folder_name)
 previsoes_path = os.path.join(root_path, "Previsoes")
-checar_rapeel_path = os.path.join(root_path, "Checar_Rapeel")
+checar_vrapeelcronograna_path = os.path.join(root_path, "Checar_Rapeel")
 
 
 def create_previsor_folders():
@@ -28,14 +34,14 @@ def create_previsor_folders():
     create_folder(root_path)
     create_folder(download_path)
     create_folder(previsoes_path)
-    create_folder(checar_rapeel_path)
+    create_folder(checar_vrapeelcronograna_path)
 
 
 def calc_previsao():
     # Calcula previsão
     global result, skate_merged
     directory = download_db(download_path, lista_download=[
-                            "skate_leilao", "skate_ug", "skate_usinas"])
+                            "vmonitoramentoleilao", "vmonitoramentoug", "vmonitoramentousina"])
     result, skate_merged = calcular_previsao(directory)
     skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
                                  'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador']].copy()
@@ -110,7 +116,7 @@ def menu_principal():
 
     if opcao_menu == 2:
         directory = download_db(download_path, force_download=True, lista_download=[
-                                "skate_ug", "skate_usinas", "skate_leilao"])
+                                "vmonitoramentoug", "vmonitoramentousina", "vmonitoramentoleilao"])
         _ = input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 3:
@@ -120,9 +126,9 @@ def menu_principal():
         print("Selecione o arquivo do BIU\n")
         biu_file_path = get_biu()
         directory = download_db(download_path, force_download=False, lista_download=[
-                                "rapeel", "skate_ug", "skate_usinas"])
+                                "vrapeelcronograna", "vmonitoramentoug", "vmonitoramentousina"])
         
-        checar_Rapeel(biu_file_path, directory, inicio_biu, checar_rapeel_path)
+        checar_Rapeel(biu_file_path, directory, inicio_biu, checar_vrapeelcronograna_path)
         _ = input("Aperte enter para retornar ao menu.")
     
     if opcao_menu == 4: 

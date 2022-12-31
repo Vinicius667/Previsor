@@ -14,7 +14,7 @@ database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
 
 
-def download_db(download_path = None, queries_path = None, lista_download = ["skate_leilao","skate_ug" ,"skate_usinas","rapeel"],data=False,force_download=False):
+def download_db(download_path = None, queries_path = None, lista_download = ["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina","vvrapeelcronogranacronograna"],data=False,force_download=False):
     print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
         skate_downloads_folder_name = "SKATE_Downloads"
@@ -91,4 +91,4 @@ if __name__ == "__main__":
     # Caminho da pasta dos resultados das previsões
     previsoes_path = os.path.join(root_path,"Previsoes")
 
-    directory = download_db(download_path,force_download=True, lista_download=["skate_leilao","skate_ug" ,"skate_usinas"])
+    directory = download_db(download_path,force_download=True, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])

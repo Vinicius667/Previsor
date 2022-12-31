@@ -47,12 +47,17 @@ def show_options(dict):
         print(f"{num}) - {text}")
 
 
-def read_file(path: str):
+def read_file(path: str,encoding = "utf-8"):
     # Lê arquivo
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding = encoding) as f:
         lines = "".join(f.readlines())
     return lines
 
+
+def write_file(text:str,path:str):
+    # Escreve arquivo
+    with open(path, 'w') as f:
+        f.write_file(text)
 
 def get_standard_folder_path(folder):
     # Retorna caminho de pastas padrões do Windows
@@ -131,6 +136,66 @@ def perguntar_abrir_pasta(path, msg = "Deseja abrir pasta com os arquivos export
 
     if opcao_pasta:
         open_folder(path)
+
+
+# Cria parquet de arquivos .xlsx .csv e json para leitura mais rápida
+# Checa intersecção de valores em alguma coluna
+# Junta arquivos em um dataframe e retorna-o
+# Apesar de serem retornados todos arquivos concatenados em um único dataframe,
+# cada arquivo lido gera um arquivo partquet separadamente 
+def sheet_to_parquet(file_paths:list,colunas=None,parquet_folder:str=False,colunas_sem_repetir:list=False,ignore_parquets=False):
+    """
+    file_paths => lista de arquivos a serem lidos
+    colunas => colunas que serão lidas em todos os arquivos. Caso não seja passada uma lista, serão utilizadas todas as colunas do primeiro arquivo.
+    parquet_folder => pasta onde serão salvos os parquets. Caso omisso, será criada uma pasta ./Parquets na mesma pasta em que cada arquivo foi lido
+    colunas_sem_repetir => Checa para essas colunas se há valores que existe em mais de um dos arquivos
+    ignore_parquets => Caso True, independentemente se os parquets tenham sido criados, o arquivo original será lido e um novo parquet será criado
+    """        
+
+    if colunas:
+        df = pd.DataFrame(columns=colunas)
+    for k,file_path in enumerate(file_paths):
+        parquet_criado = False
+        file_name,extension = os.path.split(file_path)[1].split(".")
+        if not parquet_folder:
+            parquet_folder = f"{os.path.split(file_path)[0]}/Parquets/"
+        parquet_file_path= f"{parquet_folder}{file_name}.gzip"
+        if os.path.exists(parquet_file_path) and not ignore_parquets:
+            print(f"Lendo arquivo: {parquet_file_path}")
+            df_dummy = pd.read_parquet(parquet_file_path)
+            parquet_criado = True
+        else: 
+            print(f"Lendo arquivo: {file_path}")
+            if extension == "xlsx":
+                if (k == 0) and (not colunas):
+                    df_dummy = pd.read_excel(file_path)
+                    colunas = df_dummy.columns.to_list()
+                else:
+                    df_dummy = pd.read_excel(file_path)[colunas]
+            elif extension == "csv":
+                df_dummy = pd.read_csv(file_path)[colunas]
+            elif extension == "json":
+                df_dummy = pd.read_json(file_path)[colunas]
+            else:
+                raise ValueError(f"Extensão não suportada: {extension}")
+        if  (k==0):
+            df = pd.DataFrame(columns=colunas)
+            
+            if not os.path.exists(parquet_folder):
+                print(f"Criando diretório: {parquet_folder}")
+                os.mkdir(parquet_folder)
+        if colunas_sem_repetir:
+            for coluna_sem_repetir in colunas_sem_repetir:  
+                valores_repetidos = np.intersect1d(df[coluna_sem_repetir].unique(), df_dummy[coluna_sem_repetir].unique())
+                if len(valores_repetidos) > 0:
+                    raise ValueError(f"No arquivo {file_path} na coluna {coluna_sem_repetir} há valores que também estão em outro arquvio: {', '.join(valores_repetidos)}.")
+        if not parquet_criado:
+            print(f"Criando arquivo: {parquet_file_path}")
+            create_folder(parquet_folder)
+            df_dummy.to_parquet(parquet_file_path)
+        df = pd.concat([df,df_dummy],ignore_index=True)
+    return df
+
 
 if __name__ == "__main__":
     clear_console()
