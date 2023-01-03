@@ -1,13 +1,19 @@
 import os,sys
-
-
-
 from download_DB import download_db
 
 import pandas as pd
 from scipy.stats import norm
 from datetime import date
 from utils import *
+
+
+if __name__ == "__main__":
+    # Caso o escript esteja sendo executado a partir de outro diretório
+    # muda o working directory para o caminho do script
+    script_path = os.path.dirname(__file__)
+    if not os.path.samefile(script_path,os.getcwd()):
+        os.chdir(script_path)
+        print(f"Working directory was changed: {script_path}")
 
 
 
@@ -59,7 +65,7 @@ def calcular_previsao(directory):
 
 
     # Para usinas com mais de um data de início de suprimento, mantém apenas o primeiro. 
-    vmonitoramentoleilao.dropna(subset="DatInicioSuprimento",inplace=True)
+    vmonitoramentoleilao = vmonitoramentoleilao.dropna(subset="DatInicioSuprimento").reset_index(drop=True)
     vmonitoramentoleilao["DatInicioSuprimento"] = pd.to_datetime(vmonitoramentoleilao["DatInicioSuprimento"])
     vmonitoramentoleilao = vmonitoramentoleilao.loc[vmonitoramentoleilao.groupby('IdeUsinaOutorga').DatInicioSuprimento.idxmin()]
 
@@ -183,9 +189,13 @@ def calcular_previsao(directory):
     skate_merged.loc[skate_merged.FaseAtual=="OUT_OC","ProximaFase"] = "IO_OC"
 
 
+    
+    '''    
     # Para usinas que ainda não iniciaram obra (em fase OUT_OC) assume-se maior data entre previsão SFG, previsão do agente e 4 meses a partir de hoje
     skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","DatInicioObraRealizado"] = hoje + pd.Timedelta(4*30,unit="D")
     lista_colunas_previsao_IO = ["DatPrevisaoIniciobra","DatMonitoramento"]
+    '''
+    
     skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","DatInicioObraRealizado"]  =    skate_merged.DatPrevisaoIniciobra           #skate_merged[lista_colunas_previsao_IO + ["DatInicioObraRealizado"]].max(axis=1)
     skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","DataMarcoAtual"]  = skate_merged.DatPrevisaoIniciobra 
 
@@ -221,7 +231,7 @@ def calcular_previsao(directory):
 
 
     skate_merged["AtrasoMarcoAtual"] =  skate_merged.DataMarcoAtual - skate_merged.MarcoMedioAtual
-    skate_merged["AtrasoMarcoProximo"] =  hoje  + 30 * pd.to_timedelta(1, unit='D') - skate_merged.MarcoMedioProximo
+    skate_merged["AtrasoMarcoProximo"] =  hoje  + 40 * pd.to_timedelta(1, unit='D') - skate_merged.MarcoMedioProximo
 
 
     # Adiciona-se os coeficientes da reta ao dataframe
@@ -300,27 +310,18 @@ def calcular_previsao(directory):
 
 
 if __name__ == "__main__":
+
+    # Muda working directory
+    change_2_script_dir()
+
     # Baixa informações do Skate. Caso já tenha sido baixado, informe a data em que foi baixado no formato yyyy_mm_dd. Por exemplo: 2022_08_17
     print(" Baixando arquivos ".center(60,"*") + "\n")
 
     hoje =  pd.to_datetime(date.today())
     hoje_str = hoje.strftime(r'%Y_%m_%d')
 
-    # Nome da pasta onde serão baixadas as informações do SKATE 
-    skate_downloads_folder_name = "SKATE_Downloads"
+    directory = download_db(force_download=False, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
 
-    # Pasta onde serão salvas todas as informações do SKATE (Pasta Documentos)
-    root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
-
-    # Caminho da pasta dos downloads
-    download_path = os.path.join(root_path,skate_downloads_folder_name)
-
-    # Caminho da pasta dos resultados das previsões
-    previsoes_path = os.path.join(root_path,"Previsoes")
-
-    directory = download_db(download_path,force_download=True, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
-
-    print("*".center(60,"*") + "\n")
     result,df = calcular_previsao(directory)
     if result == "Ok":
         print(df)

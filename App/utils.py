@@ -6,9 +6,36 @@ import re
 import pickle
 import pandas as pd
 import subprocess
+import inspect
 
 if sys.platform == "win32":
     from win32com.shell import shell, shellcon # type: ignore
+
+
+
+def read_file(path: str,encoding = "utf-8"):
+    # Lê arquivo
+    #Encoding: utf-8, utf-16, utf-32, utf-16-be, utf-16-le, utf-32-be, utf-32-le
+    with open(path, 'r', encoding = encoding) as f:
+        lines = "".join(f.readlines())
+    return lines
+
+
+def write_file(text:str,path:str,encoding = "utf-8"):
+    text = text.encode(encoding)
+    # Escreve arquivo
+    with open(path, 'wb') as f:
+        f.write(text)
+
+
+def change_2_script_dir():
+    # Change working directory to caller script
+    cwd = os.getcwd()
+    script_path = inspect.stack()[1][0].f_code.co_filename
+    script_path = os.path.dirname(os.path.realpath(script_path))
+    if cwd != script_path:
+        os.chdir(script_path)
+        print(f"Current working directory was changed to: {script_path}")
 
 
 def get_num(valid_nums, return_on_error=0, input_msg = "Opção: ",):

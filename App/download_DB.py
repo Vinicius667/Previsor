@@ -9,12 +9,14 @@ Cria as conexões com o banco de dados skate e baixa as tabelas vMonitoramentoLe
 vMonitoramentoUsina. Recomenada-se executar essa células apenas quando deseja-se atualizar o banco de dados SKATE, já esse processo pode demorar alguns minutos para ser executado. Após baixadas, as tabelas são salvas em formato parquet que podem ser lidos com a função pandas.read_parquet(). 
 """
 
+change_2_script_dir()
+
 server = 'SAG003\SBD172'
 database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
 
 
-def download_db(download_path = None, queries_path = None, lista_download = ["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina","vvrapeelcronogranacronograna"],data=False,force_download=False):
+def download_db(download_path = None, queries_path = None, lista_download = ["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina","vrapeelcronogranacronograna"],data=False,force_download=False):
     print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
         skate_downloads_folder_name = "SKATE_Downloads"
@@ -76,6 +78,10 @@ def download_db(download_path = None, queries_path = None, lista_download = ["vm
 
 
 if __name__ == "__main__":
+
+    # Muda working directory
+    change_2_script_dir()
+
     hoje =  pd.to_datetime(date.today())
     hoje_str = hoje.strftime(r'%Y_%m_%d')
 

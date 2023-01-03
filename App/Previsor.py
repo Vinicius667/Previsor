@@ -2,14 +2,11 @@ import os
 
 # Caso o escript esteja sendo executado a partir de outro diretório
 # muda o working directory para o caminho do script
-script_path = os.path.dirname(__file__)
-if not os.path.samefile(script_path,os.getcwd()):
-    os.chdir(script_path)
-    print(f"Working directory was changed: {script_path}")
+change_2_script_dir()
 
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db
-from checar_vrapeelcronograna import checar_Rapeel
+from checar_rapeel import checar_Rapeel
 from BIU import biu
 import pandas as pd
 import sys
