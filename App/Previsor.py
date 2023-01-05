@@ -2,7 +2,7 @@ import os
 
 # Caso o escript esteja sendo executado a partir de outro diretório
 # muda o working directory para o caminho do script
-change_2_script_dir()
+os.chdir(os.path.dirname(__file__))
 
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db
@@ -86,12 +86,14 @@ def menu_principal():
                                 * (skate_export.shape[0] / 50_000) * 24)
             print(
                 f"Exportando arquivo com previsões... Previsão: {segundos_estimado:.0f} segundos.")
-            previsao_file = os.path.join(
+            previsao_file_excel = os.path.join(
                 previsoes_path, f"Previsao_OC_{hoje_str}.xlsx")
+            previsao_file_parquet = os.path.join(previsoes_path, f"Previsao_OC_{hoje_str}.gzip")
             previsor_detalhe = os.path.join(
                 previsoes_path, f"Previsao_OC_detalhada_{hoje_str}.xlsx")
-            skate_export.to_excel(previsao_file, index=False)
-            print(f"Arquivo exportado: {previsao_file}\n")
+            skate_export.to_excel(previsao_file_excel, index=False)
+            skate_export.to_parquet(previsao_file_parquet, index=False)
+            print(f"Arquivo exportado: {previsao_file_excel}\n")
             segundos_estimado = ((2901 / psutil.cpu_freq().max)
                                 * (skate_merged.shape[0] / 50_000) * 120)
             print(
