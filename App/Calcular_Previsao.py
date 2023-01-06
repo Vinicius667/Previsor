@@ -28,6 +28,7 @@ def calcular_previsao(directory):
     'NomUsina',
     "DatPrevisaoIniciobra",
     "DatMonitoramento",
+    'DatInicioObraOutorgado',
     'DatInicioObraRealizado',
     'DatConcretagemRealizado',
     'DatMontagemRealizado',
@@ -87,9 +88,11 @@ def calcular_previsao(directory):
 
 
     # Adiciona data de obrigação das usinas ao dataframe
-    mask_ACR = skate_merged.DscComercializacaoEnergia == "ACR"
-    skate_merged.loc[mask_ACR,"Dat_OC_obrigacao"] = skate_merged.DatInicioSuprimento
-    skate_merged.loc[~mask_ACR,"Dat_OC_obrigacao"] = skate_merged.DatUGInicioOpComerOutorgado
+    skate_merged['Dat_OC_obrigacao'] = skate_merged.DatInicioSuprimento
+    skate_merged.loc[((skate_merged.DatInicioSuprimento.isna()) |
+                      (skate_merged.DatInicioSuprimento < skate_merged.DatUGInicioOpComerOutorgado)),
+    'Dat_OC_obrigacao'] = skate_merged.DatUGInicioOpComerOutorgado
+
 
     # Utilizar previsão de UTE para UTN
     skate_merged.loc[(skate_merged.SigTipoGeracao == "UTN"),"SigTipoGeracao"] = "UTE"
@@ -300,10 +303,20 @@ def calcular_previsao(directory):
     skate_merged.loc[(skate_merged.Previsao_OC < hoje) & (skate_merged.FaseAtual== "OT_OC"),"Previsao_OC"] = hoje + pd.Timedelta(60,"D")
 
 
+
+
+
     # Usinas cuja previsão OC esteja no passado e exista previsão OC para o próximo marco, usa-se a última
     mask_previsao_passado = (skate_merged.Previsao_OC < hoje) & (skate_merged.Previsao_OC_proximo.notna())
     skate_merged.loc[mask_previsao_passado,"Previsao_OC"] = skate_merged.Previsao_OC_proximo
     skate_merged.loc[mask_previsao_passado,"Indicador"] = skate_merged["IndicadorProximo"].astype(float)
+
+    skate_merged["flagOPTeste30dias"] = 0
+    skate_merged.loc[
+                     skate_merged.DatLiberacaoSFGTeste.notna() &
+                     ((hoje - skate_merged.DatLiberacaoSFGTeste) > pd.to_timedelta(30, unit='D'))
+                        ,'flagOPTeste30dias'] = 1
+
     return("Ok",skate_merged)
 
 

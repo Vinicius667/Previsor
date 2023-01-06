@@ -41,7 +41,7 @@ def calc_previsao():
                             "vmonitoramentoleilao", "vmonitoramentoug", "vmonitoramentousina"])
     result, skate_merged = calcular_previsao(directory)
     skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
-                                 'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador']].copy()
+                                 'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador','flagOPTeste30dias','DatPrevisaoIniciobra','DatInicioObraOutorgado']].copy()
     skate_export["Previsao_OC"] = skate_export.Previsao_OC.dt.normalize()
     skate_export["DatMonitoramento"] = skate_export.DatMonitoramento.dt.normalize()
     return result, skate_export
