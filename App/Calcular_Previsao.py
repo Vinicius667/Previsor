@@ -98,7 +98,7 @@ def calcular_previsao(directory):
     skate_merged.loc[(skate_merged.SigTipoGeracao == "UTN"),"SigTipoGeracao"] = "UTE"
 
     # Casos sem previsão
-    mask_remove =   (skate_merged.IdcUsinaMonitorada=="Não")  | (skate_merged.IdcSemPrevisao == "Sim")
+    mask_remove =   (skate_merged.IdcUsinaMonitorada=="Não")  #| (skate_merged.IdcSemPrevisao == "Sim")
     skate_merged = skate_merged[~mask_remove].copy()
 
 
