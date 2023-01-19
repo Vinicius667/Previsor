@@ -198,12 +198,20 @@ def calcular_previsao(directory):
     skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","DatInicioObraRealizado"] = hoje + pd.Timedelta(4*30,unit="D")
     lista_colunas_previsao_IO = ["DatPrevisaoIniciobra","DatMonitoramento"]
     '''
+    mask_out = skate_merged.FaseAtual == 'OUT_OC'
+    skate_merged.loc[mask_out,"DatInicioObraRealizado"]  =    skate_merged.DatPrevisaoIniciobra           #skate_merged[lista_colunas_previsao_IO + ["DatInicioObraRealizado"]].max(axis=1)
+    skate_merged.loc[mask_out & skate_merged.DatInicioObraRealizado.isna(),'DatInicioObraRealizado'] = hoje + pd.Timedelta(4*30,unit="D")
     
-    skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","DatInicioObraRealizado"]  =    skate_merged.DatPrevisaoIniciobra           #skate_merged[lista_colunas_previsao_IO + ["DatInicioObraRealizado"]].max(axis=1)
-    skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","DataMarcoAtual"]  = skate_merged.DatPrevisaoIniciobra 
+    
+    
+    skate_merged.loc[mask_out,"DataMarcoAtual"]  = skate_merged.DatInicioObraRealizado 
 
     # Temporariamente, para cálculo das previsões, assume-se que as usinas em fase OUT_OC estejam em fase IO_OC com a data de IO calculada acima
-    skate_merged.loc[skate_merged.FaseAtual == "OUT_OC","FaseAtual"]  = "IO_OC"
+    mask_out = skate_merged.FaseAtual == 'OUT_OC'
+    skate_merged.loc[mask_out,"FaseAtual"]  = "IO_OC"
+
+
+
 
 
     skate_merged["MarcoMedioAtual"] = pd.NA
