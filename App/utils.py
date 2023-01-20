@@ -164,6 +164,20 @@ def perguntar_abrir_pasta(path, msg = "Deseja abrir pasta com os arquivos export
     if opcao_pasta:
         open_folder(path)
 
+# Encontra colunas que todos valores são iguais
+def find_cols_all_same(df):
+    cols = df.columns
+    list_all_same = []
+    for col_name in cols:
+        col = df[col_name]
+        col = col[col.notna()]
+        num_notna_rows = col.shape[0]
+        if (num_notna_rows == 0):
+            list_all_same.append(col_name)
+        elif col.eq(col[0]).all():
+            list_all_same.append(col_name)
+    return list_all_same
+
 
 # Cria parquet de arquivos .xlsx .csv e json para leitura mais rápida
 # Checa intersecção de valores em alguma coluna
