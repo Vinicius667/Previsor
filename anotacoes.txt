@@ -1,0 +1,48 @@
+Filtro : Separar três caminhos:
+(I)
+ - Um que vai direto para o robô (UGs)
+	- Não é 0.2 & Não está paralisada & Não é sem previsão & justificativa não situação das obras de conexão e linha... & Não está na lista manual (definida abaixo item b)
+
+(II) Vai para o robô depois de intervenção 
+	a) Intervenção pelo robô 
+ - Alteração de IO: São calculadas as previsões de OC posteriormente e é mandado para o robô (apenas esses casos).
+	( ( t1.'DatPrevisaoIniciobra'n < (Today() + 15) ) and t1.'DatPrevisaoIniciobra'n not is missing)  or (
+                     t1.'prev_IO_rapeel'n > t1.'DatPrevisaoIniciobra'n and t1.'DatPrevisaoIniciobra'n not is missing) &
+	& Não está na lista manual & 
+	& Não está na lista homologação de marcos
+
+
+	b) precisa de intervenção humana: (Usinas)
+	homolagação de marcos. São calculadas as previsões de OC posteriormente e é mandado para o robô (lista homologação de marcos).
+
+		     when (t1.'DatInicioObraRealizado'n IS MISSING AND t1.'IO_real'n NOT IS MISSING) OR (t1.'DatConcretagemRealizado'n IS
+                     MISSING and t1.'CC_real'n  NOT IS MISSING)
+         
+                     or (t1.'DatMontagemRealizado'n is missing and t1.'ME_real'n not is missing) or
+         
+                     (t1.'DatEnchimentoRealizado'n is missing and t1.'Ench_Real'n not is missing) or
+         
+                     (t1.'DatSisTransmissaoRealizado'n is missing and t1.'IOTrans_Real'n not is missing) or
+         
+                     (t1.'DatCanteiroObraRealizado'n is missing and t1.'canteiroReal'n not is missing) or
+         
+                     (t1.'DatComissionamentoUGRealizado'n is missing and t1.'Comiss_Real'n not is missing) or
+         
+                     (t1.'DatConclusaoSisTransRealizado'n  is missing and t1.'Conc_Trans_REAL'n not is missing) or
+         
+                     (t1.'DatDesvioRioRealizado'n is missing and t1.'DesvRio_real'n not is missing) or
+         
+                     (t1.'DatConclusaoTorresRealizado'n is missing and  t1.'ME_Real_conc_eol'n not is missing)  
+         
+
+
+III) 
+casos de usinas que não são automatizadas: lista definida manualmente e algumas situações. (lista manual)
+		- Paralisadas |
+		- Sem previsão |
+		- Que estão no txt |
+		- Previsão OC vazio ou no passado(até o final do mês) (do previsor) |
+		- Usinas em teste [0.2 ou 0.3] |
+		- (Não foram monitoradas nos últimos 4 meses & não está em teste) 
+
+Depois de terminadas as intervenções, rodar a regra novamente para os casos II a) e b).
