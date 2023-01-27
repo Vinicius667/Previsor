@@ -141,20 +141,22 @@ def menu_principal():
     return opcao_menu
 
 
-last_download = os.path.join(download_path,last_download(download_path))
+last_download = last_download(download_path)
 
 atualizar = True
 perguntar_atualizar = True
 
-
-if not last_download:
-    atualizar = False
-else:
+if last_download:
     last_download_path = os.path.join(download_path,last_download)
+else:
+    atualizar = True
+    perguntar_atualizar = False
 
 if perguntar_atualizar:
     clear_console()
     print("Os últimos downloads encontrados são: \n")
+    print(f"last_download = {last_download}")
+
     log_path = os.path.join(last_download_path,"log.pickle")
     log = load_pickle(log_path)
 
@@ -162,16 +164,16 @@ if perguntar_atualizar:
         print(f"{db_name} - {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}\n")
 
 
-dict_atualizar = {
-    0 : "Não",
-    1 : "Sim"
-}
-print("Deseja baixar bancos de dados novamente?")
-show_options(dict_atualizar)
-opcao_atualizar = get_num(dict_atualizar)
+    dict_atualizar = {
+        0 : "Não",
+        1 : "Sim"
+    }
+    print("Deseja baixar bancos de dados novamente?")
+    show_options(dict_atualizar)
+    opcao_atualizar = get_num(dict_atualizar)
 
-if not opcao_atualizar:
-    atualizar = False
+    if not opcao_atualizar:
+        atualizar = False
 
 
 clear_console()

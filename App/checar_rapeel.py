@@ -6,10 +6,10 @@ from utils import *
 def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_vrapeelcronograna_path):
     biu =  pd.read_excel(biu_file_path)
     # Carrega dataframe com dados do skate
-    vmonitoramentoug = pd.read_parquet(f"{directory}vmonitoramentoug.gzip")
+    #vmonitoramentoug = pd.read_parquet(f"{directory}vmonitoramentoug.gzip")
     vmonitoramentousina = pd.read_parquet(f"{directory}vmonitoramentousina.gzip")
-    vrapeelcronograna = pd.read_parquet(f"{directory}vrapeelcronograna.gzip")
-    vrapeelcronograna = vrapeelcronograna.loc[vrapeelcronograna.groupby("IdeUsinaOutorga").DthEnvio.idxmax()]
+    #vrapeelcronograna = pd.read_parquet(f"{directory}vrapeelcronograna.gzip")
+    #vrapeelcronograna = vrapeelcronograna.loc[vrapeelcronograna.groupby("IdeUsinaOutorga").DthEnvio.idxmax()]
     vmonitoramentousina = pd.merge(vmonitoramentousina,vrapeelcronograna,"left",validate="one_to_one")
     hoje =  pd.to_datetime(date.today())
     futuro_proximo = inicio_biu + pd.Timedelta(60,"D")
@@ -31,11 +31,11 @@ def checar_Rapeel(biu_file_path, directory, inicio_biu,checar_vrapeelcronograna_
             how="inner")
     checar_justificativa= checar_justificativa[(checar_justificativa.Justificativadaprevisao_new != checar_justificativa.DscJustificativaPrevisao)]
     biu_manual = biu[biu.manual.notna() & biu.PrevisaoOC_Regra_TS.notna()][["IdeUsinaOutorga","NomUsina","PrevisaoOC_Regra_TS","Fiscal"]]
-    vmonitoramentoug_sem_OC = vmonitoramentoug[vmonitoramentoug.DatLiberOpComerRealizado.isna()][["IdeUsinaOutorga","NumUgUsina","DatPrevisaoSFGComercial"]]
-    checar_prev_OC = pd.merge(vmonitoramentoug_sem_OC,biu_manual,how="inner")
-    checar_prev_OC = checar_prev_OC[((checar_prev_OC.DatPrevisaoSFGComercial - checar_prev_OC.PrevisaoOC_Regra_TS).abs()) > pd.Timedelta(120,"D")].drop_duplicates(subset="IdeUsinaOutorga")
-    checar_prev_OC = pd.merge(vmonitoramentousina[["IdeUsinaOutorga","DatMonitoramento"]],checar_prev_OC,on="IdeUsinaOutorga",how="right")
-    checar_prev_OC = checar_prev_OC[checar_prev_OC.DatMonitoramento > inicio_biu]
+    #vmonitoramentoug_sem_OC = vmonitoramentoug[vmonitoramentoug.DatLiberOpComerRealizado.isna()][["IdeUsinaOutorga","NumUgUsina","DatPrevisaoSFGComercial"]]
+    #checar_prev_OC = pd.merge(vmonitoramentoug_sem_OC,biu_manual,how="inner")
+    #checar_prev_OC = checar_prev_OC[((checar_prev_OC.DatPrevisaoSFGComercial - checar_prev_OC.PrevisaoOC_Regra_TS).abs()) > pd.Timedelta(120,"D")].drop_duplicates(subset="IdeUsinaOutorga")
+    #checar_prev_OC = pd.merge(vmonitoramentousina[["IdeUsinaOutorga","DatMonitoramento"]],checar_prev_OC,on="IdeUsinaOutorga",how="right")
+    #checar_prev_OC = checar_prev_OC[checar_prev_OC.DatMonitoramento > inicio_biu]
     clear_console()
     for fiscal in lista_fiscais:
         usinas_fiscal = biu[biu.Fiscal == fiscal].IdeUsinaOutorga
