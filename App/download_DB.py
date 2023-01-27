@@ -16,7 +16,11 @@ database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
 
 
-def download_db(download_path = None, queries_path = None, lista_download = ["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina","vrapeelcronogranacronograna"],data=False,force_download=False):
+def download_db(download_path = None, queries_path = None, lista_download = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug'],data=False,force_download=False):
+
+    if(force_download and data):
+        raise ValueError(f"Argumentos force_download e data não podem ser ambos não nulos.")
+
     print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
         skate_downloads_folder_name = "SKATE_Downloads"
@@ -43,14 +47,12 @@ def download_db(download_path = None, queries_path = None, lista_download = ["vm
         os.makedirs(directory)
         print(f"Novo diretório criado: {directory}")
 
-    
     if not os.path.exists(log_path):
         log = {}
         print("Criando arquivo de log...")
     else:
         log = load_pickle(log_path)
         print("Carregando arquivo de log...")
-        #print(log)
 
 
 
@@ -58,9 +60,12 @@ def download_db(download_path = None, queries_path = None, lista_download = ["vm
     for db_name in lista_download:
         file_path = f"{directory}/{db_name}.gzip"
         if (not os.path.exists(file_path)) or force_download:
+            # Caso em que foi pedido uma data e um arquivo não foi baixado.
+            if data:
+                raise ValueError(f"Arquivo não encontrado: {file_path}.")
             query =  read_file(os.path.join(queries_path,f"{db_name}.txt"))
             db = pd.read_sql_query(query,skate_engine)
-            log[db_name] = datetime.now().strftime("Dia: %d/%m/%y - Horário: %H:%M:%S")
+            log[db_name] = datetime.now()       
             for col in db.columns:
                 if (col[:3] == "Dat"):
                     db[col] = pd.to_datetime(db[col],errors="coerce")
@@ -71,8 +76,13 @@ def download_db(download_path = None, queries_path = None, lista_download = ["vm
             db.to_parquet(file_path)
             print(f"'{db_name}.gzip' salvo em '{directory}'.")
         else:
-            print(f"{db_name} já foi baixado hoje: {log[db_name]}.  Portanto não foi baixado novamente.")
+            if not data:
+                print(f"{db_name} já foi baixado no dia: {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}. Portanto não foi baixado novamente.")
+            else:
+                print(f"O arquivo {db_name}, que foi baixado em {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}, foi carregado.")
     save_pickle(log,log_path)
+
+    
     print("\n" + "*".center(60, "*") + "\n")
     return directory
 

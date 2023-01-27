@@ -56,7 +56,7 @@ def get_biu():
 def menu_principal():
     clear_console()
     # Apresenta menu principal
-    global skate_merged, skate_export
+    global skate_merged, skate_export, atualizar
     global result, df
     dict_menu_principal = {
         0: "Sair",
@@ -72,6 +72,11 @@ def menu_principal():
     clear_console()
     print(dict_menu_principal[opcao_menu])
     print("\n")
+
+    if atualizar and opcao_menu in [1,3,4]:
+        directory = download_db(force_download=True)
+        atualizar = False
+
 
     if opcao_menu == 0:
         print("Sessão terminada.")
@@ -114,9 +119,9 @@ def menu_principal():
             _ = input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 2:
-        directory = download_db(download_path, force_download=True, lista_download=[
-                                "vmonitoramentoug", "vmonitoramentousina", "vmonitoramentoleilao"])
+        directory = download_db(download_path, force_download=True)
         _ = input("Aperte enter para retornar ao menu.")
+        atualizar = False
 
     if opcao_menu == 3:
         global biu
@@ -128,12 +133,46 @@ def menu_principal():
                                 "vrapeelcronograna", "vmonitoramentoug", "vmonitoramentousina"])
         
         checar_Rapeel(biu_file_path, directory, inicio_biu, checar_vrapeelcronograna_path)
-        _ = input("Aperte enter para retornar ao menu.")
+        input("Aperte enter para retornar ao menu.")
     
     if opcao_menu == 4: 
         pass
         
     return opcao_menu
+
+
+last_download = os.path.join(download_path,last_download(download_path))
+
+atualizar = True
+perguntar_atualizar = True
+
+
+if not last_download:
+    atualizar = False
+else:
+    last_download_path = os.path.join(download_path,last_download)
+
+if perguntar_atualizar:
+    clear_console()
+    print("Os últimos downloads encontrados são: \n")
+    log_path = os.path.join(last_download_path,"log.pickle")
+    log = load_pickle(log_path)
+
+    for db_name in log:
+        print(f"{db_name} - {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}\n")
+
+
+dict_atualizar = {
+    0 : "Não",
+    1 : "Sim"
+}
+print("Deseja baixar bancos de dados novamente?")
+show_options(dict_atualizar)
+opcao_atualizar = get_num(dict_atualizar)
+
+if not opcao_atualizar:
+    atualizar = False
+
 
 clear_console()
 create_previsor_folders()

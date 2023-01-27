@@ -11,7 +11,24 @@ import inspect
 if sys.platform == "win32":
     from win32com.shell import shell, shellcon # type: ignore
 
-
+def last_download(download_path,cols=False):
+    if not cols:
+        cols = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
+        
+    for data in sorted(os.listdir(download_path),reverse=True):
+        directory = f"{download_path}/{data}/"
+        log_path = f'{directory}/log.pickle'
+        try:
+            log = load_pickle(log_path)
+            for col in cols:
+                log[col]
+                file_path = f"{download_path}/{data}/{col}.gzip"
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError
+            return data
+        except (FileNotFoundError, KeyError):
+            continue
+    return False
 
 def read_file(path: str,encoding = "utf-8"):
     # Lê arquivo
