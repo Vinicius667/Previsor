@@ -34,18 +34,6 @@ def create_previsor_folders():
     create_folder(checar_vrapeelcronograna_path)
 
 
-def calc_previsao():
-    # Calcula previsão
-    global result, skate_merged
-    directory = download_db(download_path, lista_download=[
-                            "vmonitoramentoleilao", "vmonitoramentoug", "vmonitoramentousina"])
-    result, skate_merged = calcular_previsao(directory)
-    skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
-                                 'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador','flagOPTeste30dias','DatPrevisaoIniciobra','DatInicioObraOutorgado']].copy()
-    skate_export["Previsao_OC"] = skate_export.Previsao_OC.dt.normalize()
-    skate_export["DatMonitoramento"] = skate_export.DatMonitoramento.dt.normalize()
-    return result, skate_export
-
 
 def get_biu():
     Tk().withdraw()
@@ -53,11 +41,11 @@ def get_biu():
     return filename
 
 
-def menu_principal():
+def menu_principal(directory):
     clear_console()
     # Apresenta menu principal
-    global skate_merged, skate_export, atualizar
-    global result, df
+    global  atualizar
+
     dict_menu_principal = {
         0: "Sair",
         1: "Calcular previsão da base de dados",
@@ -84,39 +72,8 @@ def menu_principal():
 
     if opcao_menu == 1:
         clear_console()
-        print("Calculando previsão...")
-        result, skate_export = calc_previsao()
-        if result == "Ok":
-            segundos_estimado = ((2901 / psutil.cpu_freq().max)
-                                * (skate_export.shape[0] / 50_000) * 24)
-            print(
-                f"Exportando arquivo com previsões... Previsão: {segundos_estimado:.0f} segundos.")
-            previsao_file_excel = os.path.join(
-                previsoes_path, f"Previsao_OC_{hoje_str}.xlsx")
-            previsao_file_parquet = os.path.join(previsoes_path, f"Previsao_OC_{hoje_str}.gzip")
-            previsor_detalhe = os.path.join(
-                previsoes_path, f"Previsao_OC_detalhada_{hoje_str}.xlsx")
-            skate_export.to_excel(previsao_file_excel, index=False)
-            skate_export.to_parquet(previsao_file_parquet, index=False)
-            print(f"Arquivo exportado: {previsao_file_excel}\n")
-            segundos_estimado = ((2901 / psutil.cpu_freq().max)
-                                * (skate_merged.shape[0] / 50_000) * 120)
-            print(
-                f"Deseja exportar arquivo detalahado? Previsão: {segundos_estimado:.0f} segundos.\n")
-
-            options = {
-                0: "Não",
-                1: "Sim"
-            }
-            show_options(options)
-            opcao_previsao = get_num(options)
-
-            if opcao_previsao:
-                print("Exportando arquivo de previsão detalhado...")
-                skate_merged.to_excel(previsor_detalhe, index=False)
-                print(f"Arquivo exportado: {previsor_detalhe}\n\n")
-            perguntar_abrir_pasta(previsoes_path)
-            _ = input("Aperte enter para retornar ao menu.")
+        calcular_previsao(directory,previsoes_path,perguntar=True)
+        _ = input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 2:
         directory = download_db(download_path, force_download=True)
@@ -129,56 +86,53 @@ def menu_principal():
         inicio_biu = get_date()
         print("Selecione o arquivo do BIU\n")
         biu_file_path = get_biu()
-        directory = download_db(download_path, force_download=False, lista_download=[
-                                "vrapeelcronograna", "vmonitoramentoug", "vmonitoramentousina"])
+        directory = download_db(download_path, force_download=True, 
+        lista_download=["vrapeelcronograna", "vmonitoramentoug", "vmonitoramentousina"])
         
         checar_Rapeel(biu_file_path, directory, inicio_biu, checar_vrapeelcronograna_path)
         input("Aperte enter para retornar ao menu.")
     
     if opcao_menu == 4: 
-        pass
+        previsao_file = calcular_previsao(directory,previsoes_path,perguntar=False)
+        biu()
+        input("Aperte enter para retornar ao menu.")
         
     return opcao_menu
 
 
-last_download = last_download(download_path)
+last_download_path = last_download(download_path)
+
 
 atualizar = True
 perguntar_atualizar = True
+directory = ""
 
-if last_download:
-    last_download_path = os.path.join(download_path,last_download)
-else:
+if not last_download_path:
     atualizar = True
     perguntar_atualizar = False
 
 if perguntar_atualizar:
     clear_console()
     print("Os últimos downloads encontrados são: \n")
-    print(f"last_download = {last_download}")
-
-    log_path = os.path.join(last_download_path,"log.pickle")
-    log = load_pickle(log_path)
-
-    for db_name in log:
-        print(f"{db_name} - {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}\n")
-
+    show_download_pickle(last_download_path)
 
     dict_atualizar = {
         0 : "Não",
         1 : "Sim"
     }
-    print("Deseja baixar bancos de dados novamente?")
+    print("Deseja baixar os dados novamente?")
     show_options(dict_atualizar)
     opcao_atualizar = get_num(dict_atualizar)
 
     if not opcao_atualizar:
         atualizar = False
+        directory = last_download_path
+        print("Definido"*10)
 
 
 clear_console()
 create_previsor_folders()
 while (True):
-    opcao_menu = menu_principal()
+    opcao_menu = menu_principal(directory)
     if opcao_menu == 0:
         break

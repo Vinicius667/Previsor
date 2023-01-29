@@ -25,10 +25,35 @@ def last_download(download_path,cols=False):
                 file_path = f"{download_path}/{data}/{col}.gzip"
                 if not os.path.exists(file_path):
                     raise FileNotFoundError
-            return data
+            return  os.path.join(download_path,data)
         except (FileNotFoundError, KeyError):
             continue
     return False
+
+
+def show_download_pickle(download_path):
+    log_path = os.path.join(download_path,"log.pickle")
+    log = load_pickle(log_path)
+    print("=*"*30)
+    for db_name in log:
+        print(f"{db_name} - {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}")
+    print("=*"*30)
+
+
+def get_log_file(directory):
+    # Não testa se o arquivo existe
+    # Usar apenas se tiver ser certeza que existe
+    # Ou tratar Exception 
+    log_path = os.path.join(directory,"log.pickle")
+    log = load_pickle(log_path)
+    return log
+
+def get_standard_file_name(cols,log):
+    list_datas = []
+    for db_name in cols:
+        list_datas.append(log[db_name].strftime("%Y_%m_%d_%H_%M"))
+    return '_'.join(list_datas)
+
 
 def read_file(path: str,encoding = "utf-8"):
     # Lê arquivo

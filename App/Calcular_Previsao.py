@@ -5,19 +5,10 @@ import pandas as pd
 from scipy.stats import norm
 from datetime import date
 from utils import *
+import psutil
 
 
-if __name__ == "__main__":
-    # Caso o escript esteja sendo executado a partir de outro diretório
-    # muda o working directory para o caminho do script
-    script_path = os.path.dirname(__file__)
-    if not os.path.samefile(script_path,os.getcwd()):
-        os.chdir(script_path)
-        print(f"Working directory was changed: {script_path}")
-
-
-
-def calcular_previsao(directory):
+def previsor(directory):
     hoje =  pd.to_datetime(date.today())
     hoje_str = hoje.strftime(r'%Y_%m_%d')
 
@@ -40,9 +31,12 @@ def calcular_previsao(directory):
 
 
     # Carrega dataframe com dados do skate
-    vmonitoramentoug = pd.read_parquet(f"{directory}vmonitoramentoug.gzip")[lista_colunas_ug]
-    vmonitoramentousina = pd.read_parquet(f"{directory}vmonitoramentousina.gzip")[lista_colunas_usinas]
-    vmonitoramentoleilao = pd.read_parquet(f"{directory}vmonitoramentoleilao.gzip")
+    vmonitoramentoug = pd.read_parquet(os.path.join(directory,"vmonitoramentoug.gzip"))[lista_colunas_ug]
+
+    vmonitoramentousina = pd.read_parquet(os.path.join(directory,"vmonitoramentousina.gzip"))[lista_colunas_usinas]
+
+    vmonitoramentoleilao = pd.read_parquet(os.path.join(directory,"vmonitoramentoleilao.gzip"))
+
 
     # Carrega dataframe com informações do previsor
     tabela_previsor = pd.read_parquet("./Tabelas_Previsor/tabela_previsor.gzip")
@@ -311,9 +305,6 @@ def calcular_previsao(directory):
     skate_merged.loc[(skate_merged.Previsao_OC < hoje) & (skate_merged.FaseAtual== "OT_OC"),"Previsao_OC"] = hoje + pd.Timedelta(60,"D")
 
 
-
-
-
     # Usinas cuja previsão OC esteja no passado e exista previsão OC para o próximo marco, usa-se a última
     mask_previsao_passado = (skate_merged.Previsao_OC < hoje) & (skate_merged.Previsao_OC_proximo.notna())
     skate_merged.loc[mask_previsao_passado,"Previsao_OC"] = skate_merged.Previsao_OC_proximo
@@ -326,6 +317,60 @@ def calcular_previsao(directory):
                         ,'flagOPTeste30dias'] = 1
 
     return("Ok",skate_merged)
+
+
+
+def calcular_previsao(directory,previsoes_path,perguntar=False):
+    cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina']
+    log = get_log_file(directory)
+    file_name = 'Previsao_OC_' + get_standard_file_name(cols_used,log)
+    file_name_path = os.path.join(previsoes_path,file_name)
+    file_name_excel = f'{file_name_path}.xlsx'
+    file_name_parquet = f'{file_name_path}.gzip'
+    necessario_calcular = True
+    calculado_nessa_chamada = False
+
+    if((os.path.exists(file_name_parquet))):
+        print("Previsão já calculada com os arquivos baixados anteriormente.")
+        necessario_calcular = False
+
+    if necessario_calcular:
+        print("Calculando previsão...")
+        result, skate_merged = previsor(directory)
+        if result == "Ok":
+            skate_merged.to_parquet(file_name_parquet, index=False,coerce_timestamps='ms',allow_truncated_timestamps= True)
+            calculado_nessa_chamada = True
+        else:
+            pass
+            # a implementar
+
+    if perguntar:
+        print(f"Deseja exportar arquivo Excel com as previsões?")
+
+        options = {  0: "Não", 1: "Arquivo com dados usados no BIU", 2: "Arquivo detalhado"}
+        show_options(options)
+        opcao_previsao = get_num(options)
+
+        if opcao_previsao:
+            print("Exportando arquivo...")
+            if not calculado_nessa_chamada:
+                skate_merged = pd.read_parquet(file_name_parquet)
+                
+            if opcao_previsao == 1:
+                skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
+                        'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador','flagOPTeste30dias','DatPrevisaoIniciobra','DatInicioObraOutorgado']]
+                skate_export.to_excel(file_name_excel, index=False)
+
+            if opcao_previsao == 2:
+                skate_merged.to_excel(file_name_excel, index=False)
+
+        perguntar_abrir_pasta(previsoes_path)
+    return file_name_parquet
+
+
+        
+
+        
 
 
 
