@@ -33,11 +33,41 @@ def biu(download_directory,biu_path):
         print(biu_directory)
         create_folder(biu_directory)
         df_usina,df_ug = generate_BIU(download_directory)
-        caso_I = pd.merge(df_usina.loc[df_usina.Caso_I,['IdeUsinaOutorga','dscjustificativaregranova']],
-        df_ug[['IdeUsinaOutorga','NumOperacaoUg','Previsao_OC']],
-        how='left')
-        file_name = os.path.join(biu_directory,f"Caso_I_{partial_file_name}.xlsx")
-        caso_I.to_excel(file_name)    
+
+    
+        dic = {
+        'NumOperacaoUg':'NumUgUsina',
+        'regranovapmo': 'PrevisaoOC_regra',
+        'dscjustificativaregranova' : 'Justificativadaprevisao_new',
+        'criterionovopmo' : 'CriterioPrevisao',
+        'dsccriterionovo':'DscCriterioPrevisao',
+        'Previsao_OC':'CalculoPrevisorOC',
+        'Dat_OC_obrigacao':'OC_Obrigacao',
+        'DatPrevistaComercial':'PrevisaoOC_rapeel_max', 
+        'DscJustificativaPrevisao':'DscJustificativaPrevisaoAtual',
+        'DatPrevisaoIniciobra':'prev_IO_SFG',
+        'prev_IO':'prev_IO_rapeel'
+    } 
+    df_ug = df_ug.rename(columns=dic)
+    df_usina = df_usina.rename(columns=dic)
+
+
+    # Caso I
+    file_name = os.path.join(biu_directory,f"Caso_I_{partial_file_name}.xlsx")
+    df_usina[df_usina.Caso_I][['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG','DatMonitoramento','DthEnvio']].to_excel(file_name)
+
+    # Caso II_a
+    file_name = os.path.join(biu_directory,f"Caso_II_a_{partial_file_name}.xlsx")
+    df_usina[df_usina.Caso_II_a][['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG','DatMonitoramento','DthEnvio']].to_excel(file_name)
+
+    # Caso II-b e III
+    file_name = os.path.join(biu_directory,f"BIU_{partial_file_name}.xlsx")
+    df_usina[df_usina.Caso_II_b | df_usina.Caso_III].to_excel(file_name)
+    
+    print("Arquivos exportados...")
+
+
+
 
 def generate_BIU(download_directory):
     # Lista de colunas que serão usadas várias vezes para a realização de merges entre os dataframes
@@ -459,5 +489,9 @@ def generate_BIU(download_directory):
     list_justificativas = ['dsccriterionovo','dscjustificativaregranova']
     df_usina = pd.merge(df_usina,
     df_usina_criterio[['IdeUsinaOutorga','criterionovopmo'] + list_justificativas],
-    on = "IdeUsinaOutorga", how='left')
+    on = "IdeUsinaOutorga", how='left').sort_values('IdeUsinaOutorga')
+
+    list_casos = ['Caso_I','Caso_II_a','Caso_II_b','Caso_III']
+    df_ug = pd.merge(df_usina[['IdeUsinaOutorga','dscjustificativaregranova','dsccriterionovo','DatMonitoramento','DscJustificativaPrevisao'] + list_casos],df_ug, on = "IdeUsinaOutorga",how='left').sort_values(list_id_ug)
+
     return (df_usina,df_ug)
