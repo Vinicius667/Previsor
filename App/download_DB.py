@@ -16,7 +16,7 @@ database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
 
 
-def download_db(download_path = None, queries_path = None, lista_download = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug'],data=False,force_download=False):
+def download_db(download_path = None, queries_path = None, lista_download = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug'],data=False,force_download=True):
 
     if(force_download and data):
         raise ValueError(f"Argumentos force_download e data não podem ser ambos não nulos.")
@@ -35,17 +35,17 @@ def download_db(download_path = None, queries_path = None, lista_download = ['vm
     # as informações do SKATE no dia de hoje.
     if not data:
         today = date.today().strftime('%Y_%m_%d')
-        directory = f"{download_path}/{today}/"
+        download_directory = f"{download_path}/{today}/"
     else:
-        directory = f"{download_path}/{data}/"
+        download_directory = f"{download_path}/{data}/"
     
-    log_path = f'{directory}/log.pickle'
+    log_path = f'{download_directory}/log.pickle'
 
-    if not os.path.exists(directory):
+    if not os.path.exists(download_directory):
         if data:
-            raise ValueError(f"O diretório '{directory}' não existe")
-        os.makedirs(directory)
-        print(f"Novo diretório criado: {directory}")
+            raise ValueError(f"O diretório '{download_directory}' não existe")
+        os.makedirs(download_directory)
+        print(f"Novo diretório criado: {download_directory}")
 
     if not os.path.exists(log_path):
         log = {}
@@ -58,7 +58,7 @@ def download_db(download_path = None, queries_path = None, lista_download = ['vm
 
     # Baixa informações, caso já não tenham sido baixadas
     for db_name in lista_download:
-        file_path = f"{directory}/{db_name}.gzip"
+        file_path = f"{download_directory}/{db_name}.gzip"
         if (not os.path.exists(file_path)) or force_download:
             # Caso em que foi pedido uma data e um arquivo não foi baixado.
             if data:
@@ -74,7 +74,7 @@ def download_db(download_path = None, queries_path = None, lista_download = ['vm
                 if (col[:3] == "Ide"):
                     db[col] = db[col].astype(int)
             db.to_parquet(file_path)
-            print(f"'{db_name}.gzip' salvo em '{directory}'.")
+            print(f"'{db_name}.gzip' salvo em '{download_directory}'.")
         else:
             if not data:
                 print(f"{db_name} já foi baixado no dia: {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}. Portanto não foi baixado novamente.")
@@ -84,7 +84,7 @@ def download_db(download_path = None, queries_path = None, lista_download = ['vm
 
     
     print("\n" + "*".center(60, "*") + "\n")
-    return directory
+    return download_directory
 
 
 if __name__ == "__main__":
@@ -107,4 +107,4 @@ if __name__ == "__main__":
     # Caminho da pasta dos resultados das previsões
     previsoes_path = os.path.join(root_path,"Previsoes")
 
-    directory = download_db(download_path,force_download=True, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
+    download_directory = download_db(download_path,force_download=True, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])

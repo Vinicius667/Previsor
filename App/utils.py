@@ -7,13 +7,24 @@ import pickle
 import pandas as pd
 import subprocess
 import inspect
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
+
 
 if sys.platform == "win32":
     from win32com.shell import shell, shellcon # type: ignore
 
+all_cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
+
+def get_file():
+    Tk().withdraw()
+    filename = askopenfilename()
+    return filename
+
+
 def last_download(download_path,cols=False):
     if not cols:
-        cols = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
+        cols = all_cols_used
         
     for data in sorted(os.listdir(download_path),reverse=True):
         directory = f"{download_path}/{data}/"

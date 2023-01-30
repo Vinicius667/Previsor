@@ -364,7 +364,7 @@ def calcular_previsao(directory,previsoes_path,perguntar=False):
             if opcao_previsao == 2:
                 skate_merged.to_excel(file_name_excel, index=False)
 
-        perguntar_abrir_pasta(previsoes_path)
+            perguntar_abrir_pasta(previsoes_path)
     return file_name_parquet
 
 

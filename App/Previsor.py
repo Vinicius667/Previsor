@@ -11,37 +11,38 @@ from BIU import biu
 import pandas as pd
 import sys
 from utils import *
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 import psutil
 from datetime import date
 
+# Caminho onde serão salvos os arquivos
+root_path = r"S:\BD\SKATE\BIU\Python"
+if not os.path.exists(root_path):
+    root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
 
-hoje = pd.to_datetime(date.today())
-hoje_str = hoje.strftime(r'%Y_%m_%d')
-skate_downloads_folder_name = "SKATE_Downloads"
-root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
-download_path = os.path.join(root_path, skate_downloads_folder_name)
+# Onde serão salvos os arquivos baixados dos bancos de dados
+download_path = os.path.join(root_path, "SKATE_Downloads")
+
+# Onde serão salvas as previsões
 previsoes_path = os.path.join(root_path, "Previsoes")
+
+# Onde serão salvos os arquivos do BIU
+biu_path = os.path.join(root_path, "BIU")
+
+# Arquivos das previsões
 checar_vrapeelcronograna_path = os.path.join(root_path, "Checar_Rapeel")
-
-
+################################## Funções ##################################
 def create_previsor_folders():
     # Cria pastas padrão necessárias
     create_folder(root_path)
     create_folder(download_path)
     create_folder(previsoes_path)
     create_folder(checar_vrapeelcronograna_path)
+    create_folder(biu_path)
 
 
 
-def get_biu():
-    Tk().withdraw()
-    filename = askopenfilename()
-    return filename
 
-
-def menu_principal(directory):
+def menu_principal(download_directory):
     clear_console()
     # Apresenta menu principal
     global  atualizar
@@ -61,8 +62,8 @@ def menu_principal(directory):
     print(dict_menu_principal[opcao_menu])
     print("\n")
 
-    if atualizar and opcao_menu in [1,3,4]:
-        directory = download_db(force_download=True)
+    if atualizar and opcao_menu in [1,4]:
+        download_directory = download_db(force_download=True)
         atualizar = False
 
 
@@ -72,40 +73,37 @@ def menu_principal(directory):
 
     if opcao_menu == 1:
         clear_console()
-        calcular_previsao(directory,previsoes_path,perguntar=True)
-        _ = input("Aperte enter para retornar ao menu.")
+        calcular_previsao(download_directory,previsoes_path,perguntar=True)
+        input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 2:
-        directory = download_db(download_path, force_download=True)
-        _ = input("Aperte enter para retornar ao menu.")
+        download_directory = download_db(download_path, force_download=True)
+        input("Aperte enter para retornar ao menu.")
         atualizar = False
 
     if opcao_menu == 3:
-        global biu
-        print("Data do início do BIU:")
-        inicio_biu = get_date()
-        print("Selecione o arquivo do BIU\n")
-        biu_file_path = get_biu()
-        directory = download_db(download_path, force_download=True, 
-        lista_download=["vrapeelcronograna", "vmonitoramentoug", "vmonitoramentousina"])
-        
-        checar_Rapeel(biu_file_path, directory, inicio_biu, checar_vrapeelcronograna_path)
+        lista_download=["vmonitoramentoug", "vmonitoramentousina"]
+        if not os.path.exists(os.path.join(download_directory,'vrapeelcronograna.gzip')):
+            lista_download.append('vrapeelcronograna')
+        download_directory = download_db(download_path, force_download=True,lista_download=lista_download)
+        checar_Rapeel(download_directory, checar_vrapeelcronograna_path)
         input("Aperte enter para retornar ao menu.")
     
     if opcao_menu == 4: 
-        previsao_file = calcular_previsao(directory,previsoes_path,perguntar=False)
-        biu()
+        previsao_file = calcular_previsao(download_directory,previsoes_path,perguntar=False)
+        biu(download_directory,biu_path)
         input("Aperte enter para retornar ao menu.")
         
     return opcao_menu
 
+#############################################################################
 
 last_download_path = last_download(download_path)
 
 
 atualizar = True
 perguntar_atualizar = True
-directory = ""
+download_directory = ""
 
 if not last_download_path:
     atualizar = True
@@ -126,13 +124,12 @@ if perguntar_atualizar:
 
     if not opcao_atualizar:
         atualizar = False
-        directory = last_download_path
-        print("Definido"*10)
+        download_directory = last_download_path
 
 
 clear_console()
 create_previsor_folders()
 while (True):
-    opcao_menu = menu_principal(directory)
+    opcao_menu = menu_principal(download_directory)
     if opcao_menu == 0:
         break
