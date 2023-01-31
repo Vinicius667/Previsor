@@ -15,9 +15,10 @@ import psutil
 from datetime import date
 
 # Caminho onde serão salvos os arquivos
-root_path = r"S:\BD\SKATE\BIU\Python"
-if not os.path.exists(root_path):
-    root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
+#root_path = r"S:\BD\SKATE\BIU\Python"
+#if not os.path.exists(root_path):
+root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
+print(f"root_path: {root_path}")
 
 # Onde serão salvos os arquivos baixados dos bancos de dados
 download_path = os.path.join(root_path, "SKATE_Downloads")
