@@ -1,38 +1,57 @@
 import os, sys
 from utils import *
-from download_DB import download_db
+from download_DB import download_db, atualizar_db
 import glob
 import pandas as pd
 import numpy as np
+from Calcular_Previsao import calcular_previsao
+
 
 from datetime import date,datetime,timedelta
-hoje =  pd.to_datetime(date.today() + timedelta(days=25)) 
+hoje =  pd.to_datetime(date.today()) 
 final_do_mes = pd.to_datetime(datetime(hoje.year,hoje.month+1,1) - timedelta(seconds=1))
 hoje_str = date.today().strftime('%Y_%m_%d')
+biu_download_cols  = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
 
 # Lista de colunas que serão usadas várias vezes para a realização de merges entre os dataframes
 list_id_data = ['DthEnvio','IdeUsinaOutorga']
 list_id_ug = ['IdeUsinaOutorga','NumOperacaoUg']
+def biu(biu_download_path,biu_path):
 
-def biu(download_directory,biu_path):
-    log = get_log_file(download_directory)
-    
-    partial_file_name =  get_standard_file_name(['vmonitoramentoug', 'vmonitoramentousina','vrapeellicenciamento'],log)
-    biu_directory = os.path.join(biu_path,hoje_str)
-    list_casos = ['Caso_I','Caso_II_a','Caso_II_b','Caso_III']
+    log_biu_file_name = os.path.join(biu_path,'biu_log.pickle')
+
     options = {
     0 : "Voltar",
     1 : "Gerar BIU (Estágio I)",
     2 : "Recalcular BIU (Estágio II)"
     }
+
     show_options(options)
     option = get_num(options)
 
     if option == 1:
-        print("Gerando arquivos do BIU...")
-        print(biu_directory)
-        create_folder(biu_directory)
-        df_usina,df_ug = generate_BIU(download_directory)
+        if os.path.exists(log_biu_file_name):
+            log = load_pickle(log_biu_file_name)
+            if log['Terminado'] == False:
+                print(f'Um BIU foi iniciado em {log["Inicio"].strftime("%d/%m/%Y")} e ainda não foi terminado.')
+                print("Deseja terminá-lo? As inform ações serão apagadas.")
+                options = {1 : "Sim", 2:"Não"}
+                show_options(options)
+                num = get_num(options)
+                if num == 2: # Terminar biu
+                    return False
+                if num == 1:
+                    verificacao = input("Digite Aneel e aperte enter para confirmar exclusão do BIU")
+                    if verificacao.replace(" ",'').lower() != "annel":
+                        print("Verificação falhou")
+                        return False
+        log = {
+            "Terminado":False,
+            "Inicio": hoje
+        }
+
+        previsao_file =  os.path.join(biu_path,'Previsao_OC.gzip') #/calcular_previsao(biu_download_path,biu_path,perguntar=False)
+        df_usina,df_ug = generate_BIU(biu_download_path,previsao_file)
 
     
         dic = {
@@ -53,23 +72,25 @@ def biu(download_directory,biu_path):
 
 
     # Caso I
-    file_name = os.path.join(biu_directory,f"Caso_I_{partial_file_name}.xlsx")
+    file_name = os.path.join(biu_path,f"Caso_I.xlsx")
     df_usina[df_usina.Caso_I][['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG','DatMonitoramento','DthEnvio']].to_excel(file_name)
 
     # Caso II_a
-    file_name = os.path.join(biu_directory,f"Caso_II_a_{partial_file_name}.xlsx")
+    file_name = os.path.join(biu_path,f"Caso_II_a.xlsx")
     df_usina[df_usina.Caso_II_a][['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG','DatMonitoramento','DthEnvio']].to_excel(file_name)
 
     # Caso II-b e III
-    file_name = os.path.join(biu_directory,f"BIU_{partial_file_name}.xlsx")
+    file_name = os.path.join(biu_path,f"BIU.xlsx")
     df_usina[df_usina.Caso_II_b | df_usina.Caso_III].to_excel(file_name)
     
     print("Arquivos exportados...")
 
+    save_pickle(log,log_biu_file_name)
 
 
 
-def generate_BIU(download_directory):
+
+def generate_BIU(download_directory,previsao_file):
     # Lista de colunas que serão usadas várias vezes para a realização de merges entre os dataframes
     list_id_data = ['DthEnvio','IdeUsinaOutorga']
     list_id_ug = ['IdeUsinaOutorga','NumOperacaoUg']
@@ -317,8 +338,6 @@ def generate_BIU(download_directory):
     df_ug = pd.merge(df_usina[list_cols_used],monitoramentoug,on="IdeUsinaOutorga",how='left')
     df_ug = pd.merge(df_ug,ug_rapeel,on=list_id_ug,how='left')
     df_ug = df_ug.loc[df_ug.DatLiberOpComerRealizado.isna()].reset_index(drop=True)
-    previsao_path = os.path.join(get_standard_folder_path("Documents"),r"Previsor\Previsoes")
-    previsao_file = sorted(glob.glob(f"{previsao_path}/*.gzip"))[-1]
     calculo_previsao = pd.read_parquet(previsao_file)
     calculo_previsao.FaseAtual =calculo_previsao.FaseAtual.str.slice(0,-3)
     calculo_previsao.Indicador =calculo_previsao.Indicador/100

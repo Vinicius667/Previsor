@@ -10,11 +10,9 @@ import inspect
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
-
 if sys.platform == "win32":
     from win32com.shell import shell, shellcon # type: ignore
 
-all_cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
 
 def get_file():
     Tk().withdraw()
@@ -23,24 +21,17 @@ def get_file():
 
 
 def last_download(download_path,cols=False):
-    if not cols:
-        cols = all_cols_used
-        
-    for data in sorted(os.listdir(download_path),reverse=True):
-        directory = f"{download_path}/{data}/"
-        log_path = f'{directory}/log.pickle'
-        try:
-            log = load_pickle(log_path)
-            for col in cols:
-                log[col]
-                file_path = f"{download_path}/{data}/{col}.gzip"
-                if not os.path.exists(file_path):
-                    raise FileNotFoundError
-            return  os.path.join(download_path,data)
-        except (FileNotFoundError, KeyError):
-            continue
-    return False
-
+    log_path = os.path.join(download_path,'log.pickle')
+    try:
+        log = load_pickle(log_path)
+        for col in cols:
+            log[col]
+            file_path = f"{download_path}/{col}.gzip"
+            if not os.path.exists(file_path):
+                return False
+        return  download_path
+    except (FileNotFoundError, KeyError):
+        return False
 
 def show_download_pickle(download_path):
     log_path = os.path.join(download_path,"log.pickle")

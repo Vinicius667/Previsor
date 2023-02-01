@@ -14,13 +14,46 @@ change_2_script_dir()
 server = 'SAG003\SBD172'
 database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
+biu_download_cols  = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
 
 
-def download_db(download_path = None, queries_path = None, lista_download = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug'],data=False,force_download=True):
 
-    if(force_download and data):
-        raise ValueError(f"Argumentos force_download e data não podem ser ambos não nulos.")
+def atualizar_db(download_path,cols=False,perguntar=False):
+    if not cols:
+        cols = biu_download_cols
+    atualizar = True
+    perguntar_atualizar = True
+    last_download_path = last_download(download_path, cols=biu_download_cols)
 
+    if not last_download_path:
+        atualizar = True
+        perguntar_atualizar = False
+
+
+    perguntar_atualizar = perguntar_atualizar & perguntar
+
+    if perguntar_atualizar:
+        clear_console()
+        print("Os últimos downloads encontrados são: \n")
+        show_download_pickle(last_download_path)
+
+        dict_atualizar = {
+            0 : "Não",
+            1 : "Sim"
+        }
+        print("Deseja baixar os dados novamente?")
+        show_options(dict_atualizar)
+        opcao_atualizar = get_num(dict_atualizar)
+
+        if opcao_atualizar == 0:
+            atualizar = False
+
+    if atualizar:
+        download_db(download_path,lista_download=cols,force_download=True)
+        return True
+    return False
+
+def download_db(download_path = None, queries_path = None, lista_download = biu_download_cols,force_download=True):
     print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
         skate_downloads_folder_name = "SKATE_Downloads"
@@ -33,19 +66,10 @@ def download_db(download_path = None, queries_path = None, lista_download = ['vm
 
     # Caso não seja informada a data referente um arquivo que já foi baixado previamente, serão baixadas
     # as informações do SKATE no dia de hoje.
-    if not data:
-        today = date.today().strftime('%Y_%m_%d')
-        download_directory = f"{download_path}/{today}/"
-    else:
-        download_directory = f"{download_path}/{data}/"
-    
-    log_path = f'{download_directory}/log.pickle'
 
-    if not os.path.exists(download_directory):
-        if data:
-            raise ValueError(f"O diretório '{download_directory}' não existe")
-        os.makedirs(download_directory)
-        print(f"Novo diretório criado: {download_directory}")
+
+    download_directory = download_path
+    log_path = f'{download_directory}/log.pickle'
 
     if not os.path.exists(log_path):
         log = {}
@@ -58,11 +82,9 @@ def download_db(download_path = None, queries_path = None, lista_download = ['vm
 
     # Baixa informações, caso já não tenham sido baixadas
     for db_name in lista_download:
+        print(os.path.join(queries_path,f"{db_name}.txt"))
         file_path = f"{download_directory}/{db_name}.gzip"
         if (not os.path.exists(file_path)) or force_download:
-            # Caso em que foi pedido uma data e um arquivo não foi baixado.
-            if data:
-                raise ValueError(f"Arquivo não encontrado: {file_path}.")
             query =  read_file(os.path.join(queries_path,f"{db_name}.txt"))
             db = pd.read_sql_query(query,skate_engine)
             log[db_name] = datetime.now()       

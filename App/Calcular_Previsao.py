@@ -1,6 +1,5 @@
 import os,sys
-from download_DB import download_db
-
+from download_DB import download_db, atualizar_db
 import pandas as pd
 from scipy.stats import norm
 from datetime import date
@@ -322,17 +321,19 @@ def previsor(directory):
 
 def calcular_previsao(directory,previsoes_path,perguntar=False):
     cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina']
+    atualizar_db(directory,perguntar=perguntar)
+    
     log = get_log_file(directory)
     file_name = 'Previsao_OC_' + get_standard_file_name(cols_used,log)
-    file_name_path = os.path.join(previsoes_path,file_name)
+    file_name_path = os.path.join(previsoes_path,'Previsao_OC')
     file_name_excel = f'{file_name_path}.xlsx'
     file_name_parquet = f'{file_name_path}.gzip'
     necessario_calcular = True
     calculado_nessa_chamada = False
 
-    if((os.path.exists(file_name_parquet))):
-        print("Previsão já calculada com os arquivos baixados anteriormente.")
-        necessario_calcular = False
+    #if((os.path.exists(file_name_parquet))):
+    #   print("Previsão já calculada com os arquivos baixados anteriormente.")
+    #    necessario_calcular = False
 
     if necessario_calcular:
         print("Calculando previsão...")
@@ -345,9 +346,13 @@ def calcular_previsao(directory,previsoes_path,perguntar=False):
             # a implementar
 
     if perguntar:
-        print(f"Deseja exportar arquivo Excel com as previsões?")
+        skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
+        'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador','flagOPTeste30dias','DatPrevisaoIniciobra','DatInicioObraOutorgado']]
+        skate_export.to_excel(file_name_excel, index=False)
+        
+        print(f"Deseja exportar arquivo Excel detalhado?")
 
-        options = {  0: "Não", 1: "Arquivo com dados usados no BIU", 2: "Arquivo detalhado"}
+        options = {  0: "Não", 1: "Sim"}
         show_options(options)
         opcao_previsao = get_num(options)
 
@@ -355,16 +360,10 @@ def calcular_previsao(directory,previsoes_path,perguntar=False):
             print("Exportando arquivo...")
             if not calculado_nessa_chamada:
                 skate_merged = pd.read_parquet(file_name_parquet)
-                
             if opcao_previsao == 1:
-                skate_export = skate_merged[['NomUsina', 'IdeUsinaOutorga', 'NumUgUsina', 'SigTipoGeracao',
-                        'Previsao_OC', 'Dat_OC_obrigacao', 'DatMonitoramento', 'FaseAtual', 'Indicador','flagOPTeste30dias','DatPrevisaoIniciobra','DatInicioObraOutorgado']]
-                skate_export.to_excel(file_name_excel, index=False)
-
-            if opcao_previsao == 2:
                 skate_merged.to_excel(file_name_excel, index=False)
-
             perguntar_abrir_pasta(previsoes_path)
+    
     return file_name_parquet
 
 
