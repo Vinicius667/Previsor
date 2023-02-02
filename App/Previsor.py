@@ -103,15 +103,10 @@ def menu_principal():
     return opcao_menu
 
 #############################################################################
-
-
-
-
-
-
 clear_console()
 create_previsor_folders()
 while (True):
     opcao_menu = menu_principal()
     if opcao_menu == 0:
         break
+

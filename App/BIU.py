@@ -34,14 +34,14 @@ def biu(biu_download_path,biu_path):
             log = load_pickle(log_biu_file_name)
             if log['Terminado'] == False:
                 print(f'Um BIU foi iniciado em {log["Inicio"].strftime("%d/%m/%Y")} e ainda não foi terminado.')
-                print("Deseja terminá-lo? As inform ações serão apagadas.")
+                print("Deseja terminá-lo? As informações serão apagadas.")
                 options = {1 : "Sim", 2:"Não"}
                 show_options(options)
                 num = get_num(options)
                 if num == 2: # Terminar biu
                     return False
                 if num == 1:
-                    verificacao = input("Digite Aneel e aperte enter para confirmar exclusão do BIU")
+                    verificacao = input("Digite Aneel e aperte enter para confirmar exclusão do BIU: ")
                     if verificacao.replace(" ",'').lower() != "annel":
                         print("Verificação falhou")
                         return False

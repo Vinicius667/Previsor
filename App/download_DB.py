@@ -56,9 +56,8 @@ def atualizar_db(download_path,cols=False,perguntar=False):
 def download_db(download_path = None, queries_path = None, lista_download = biu_download_cols,force_download=True):
     print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
-        skate_downloads_folder_name = "SKATE_Downloads"
         root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
-        download_path = os.path.join(root_path,skate_downloads_folder_name)
+        download_path = os.path.join(root_path,'Download')
 
 
     if not queries_path:
@@ -98,10 +97,7 @@ def download_db(download_path = None, queries_path = None, lista_download = biu_
             db.to_parquet(file_path)
             print(f"'{db_name}.gzip' salvo em '{download_directory}'.")
         else:
-            if not data:
-                print(f"{db_name} já foi baixado no dia: {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}. Portanto não foi baixado novamente.")
-            else:
-                print(f"O arquivo {db_name}, que foi baixado em {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}, foi carregado.")
+            print(f"{db_name} já foi baixado no dia: {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}. Portanto não foi baixado novamente.")
     save_pickle(log,log_path)
 
     
