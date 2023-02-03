@@ -125,11 +125,6 @@ def read_file(path: str,encoding = "utf-8"):
     return lines
 
 
-def write_file(text:str,path:str):
-    # Escreve arquivo
-    with open(path, 'w') as f:
-        f.write_file(text)
-
 def get_standard_folder_path(folder):
     # Retorna caminho de pastas padrões do Windows
     # Tenta acessar no linux. Cria caso não houver

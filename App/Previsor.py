@@ -36,6 +36,8 @@ previsoes_path = os.path.join(root_path, "Previsoes")
 
 # Onde serão salvos os arquivos do BIU
 biu_path = os.path.join(root_path, "BIU")
+estagio_I = os.path.join(biu_path, "Estagio_I")
+estagio_II = os.path.join(biu_path, "Estagio_II")
 biu_download_path = os.path.join(biu_path, "Download")
 
 # Onde serão salvos os arquivos da checagem - Não possui pasta downloads - Sempre usa a atual
@@ -54,7 +56,8 @@ def create_previsor_folders():
     create_folder(checar_vrapeelcronograna_path)
     create_folder(biu_path)
     create_folder(biu_download_path)
-
+    create_folder(estagio_I)
+    create_folder(estagio_II)
 
 
 def menu_principal():
@@ -87,17 +90,17 @@ def menu_principal():
         input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 2:
-        download_directory = download_db(download_path, force_download=True)
+        download_db(download_path, force_download=True)
         input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 3:
-        download_directory = download_db(download_path, force_download=True)
+        download_db(download_path, force_download=True)
         atualizar_db(perguntar=True)
-        checar_Rapeel(download_directory, checar_vrapeelcronograna_path)
+        checar_Rapeel(download_path, checar_vrapeelcronograna_path)
         input("Aperte enter para retornar ao menu.")
-    
+     
     if opcao_menu == 4: 
-        biu(biu_download_path,biu_path)
+        biu(biu_path,download_path)
         input("Aperte enter para retornar ao menu.")
         
     return opcao_menu

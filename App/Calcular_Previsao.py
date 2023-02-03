@@ -319,9 +319,9 @@ def previsor(directory):
 
 
 
-def calcular_previsao(directory,previsoes_path,perguntar=False):
+def calcular_previsao(download_path,previsoes_path,perguntar=False):
     cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina']
-    atualizar_db(directory,perguntar=perguntar)
+    download_db(download_path,force_download=True)
     
     log = get_log_file(directory)
     file_name = 'Previsao_OC_' + get_standard_file_name(cols_used,log)
