@@ -277,6 +277,107 @@ def sheet_to_parquet(file_paths:list,colunas=None,parquet_folder:str=False,colun
     return df
 
 
+def show_cases(df_original,columns=False,max_cases=5,return_all_columns=False):
+    """
+    Returns one example of each unique scenario found within the rows of the dataframe.
+    If a column has more unique values than max_cases, the method .notna() will be applied to the column transforming all non-null values into True and the null values into False.
+    The returned dataframe will be sorted by the number of occurrences of each scenario which can be seen in the column Count.
+
+    ######################################## Example ###################################################
+    Example:
+
+    # Creates a dataframe for testing the function.
+
+    df_test = pd.DataFrame({'A':[1,np.nan,3,np.nan,5],'B':[np.nan,4,6,np.nan,10],'C':[3,6,5,np.nan,15]})
+    df_test
+
+    Output:
+    +-----+-----+------+
+    |  A  |  B  |   C  |
+    +-----+-----+------+
+    | 1.0 | NaN |  3.0 |
+    +-----+-----+------+
+    | NaN | 4.0 |  6.0 |
+    +-----+-----+------+
+    | 3.0 | 6.0 | 5.0  |
+    +-----+-----+------+
+    | NaN | NaN | NaN  |
+    +-----+-----+------+
+    | 5.0 | 10. | 15.0 |
+    +-----+-----+------+
+    
+    ####################################################################################################
+
+    # If max_cases == 0, .notna() will be applied to all columns because all of them will have more
+    # unique values than 0.
+    # In this case, since max_cases equals 0, this function considers only if the values are null or 
+    # not (.notna() method). This means the row containing [3,6,5] and [5,10,15] were seen as the same
+    scenario [True,True,True] (all non-null values).
+
+    show_cases(df_test,max_cases=0)
+
+    Output:
+    +-----+-----+-----+----------+----------+----------+-------+
+    | A   | B   | C   | A (case) | B (case) | C (case) | Count |
+    +-----+-----+-----+----------+----------+----------+-------+
+    | 3.0 | 6.0 | 5.0 | True     | True     | True     | 2     |
+    +-----+-----+-----+----------+----------+----------+-------+
+    | NaN | NaN | NaN | False    | False    | False    | 1     |
+    +-----+-----+-----+----------+----------+----------+-------+
+    | NaN | 4.0 | 6.0 | False    | True     | True     | 1     |
+    +-----+-----+-----+----------+----------+----------+-------+
+    | 1.0 | NaN | 3.0 | True     | False    | True     | 1     |
+    +-----+-----+-----+----------+----------+----------+-------+
+
+    ####################################################################################################
+
+    # In this case, since all columns have equal or less unique values than 5, none of them were
+    # replaced by the .notna() method, and that's why the rows that were seen as the same scenario in 
+    # the previous example were seen as different scenarios here.  
+
+    show_cases(df_test,max_cases=5)
+
+    Output:
+    +-----+------+------+----------+----------+----------+-------+
+    | A   | B    | C    | A (case) | B (case) | C (case) | Count |
+    +-----+------+------+----------+----------+----------+-------+
+    | NaN | NaN  | NaN  | NaN      | NaN      | NaN      | 1     |
+    +-----+------+------+----------+----------+----------+-------+
+    | NaN | 4.0  | 6.0  | False    | 4.0      | 6.0      | 1     |
+    +-----+------+------+----------+----------+----------+-------+
+    | 1.0 | NaN  | 3.0  | 1.0      | NaN      | 3.0      | 1     |
+    +-----+------+------+----------+----------+----------+-------+
+    | 3.0 | 6.0  | 5.0  | 3.0      | 6.0      | 5.0      | 1     |
+    +-----+------+------+----------+----------+----------+-------+
+    | 5.0 | 10.0 | 15.0 | 5.0      | 10.0     | 15.0     | 1     |
+    +-----+------+------+----------+----------+----------+-------+
+    """
+
+    if type(columns) == pd.core.indexes.base.Index:
+        columns = df_original.columns
+
+    elif columns == False:
+        columns = df_original.columns
+
+    # Create dummy dataframe to replace tha values
+    df = df_original[columns].copy()
+    na_replace = '__NaRepVal__'
+    for col in columns:
+        if df[col].drop_duplicates().shape[0]>max_cases:
+            df[col] = df[col].notna()
+    cases_count = df.value_counts(dropna=False).reset_index().rename(columns={0:"Count"})
+    cases = cases_count[columns]
+    idxs = []
+    for idx in range(cases.shape[0]):
+        case =  df.fillna(na_replace).eq(cases.iloc[idx].fillna(na_replace)).all(axis=1)
+        idxs.append(case[case].index[0])
+    cases_count.index = idxs 
+
+    if return_all_columns:
+        columns = df_original.columns
+
+    return  df_original.loc[idxs][columns].join(cases_count,rsuffix=' (case)')     
+
 if __name__ == "__main__":
     clear_console()
     path = os.path.dirname(__file__)

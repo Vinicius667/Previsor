@@ -7,7 +7,7 @@ from utils import *
 import psutil
 
 
-def previsor(directory):
+def previsor(download_path):
     hoje =  pd.to_datetime(date.today())
     hoje_str = hoje.strftime(r'%Y_%m_%d')
 
@@ -30,11 +30,11 @@ def previsor(directory):
 
 
     # Carrega dataframe com dados do skate
-    vmonitoramentoug = pd.read_parquet(os.path.join(directory,"vmonitoramentoug.gzip"))[lista_colunas_ug]
+    vmonitoramentoug = pd.read_parquet(os.path.join(download_path,"vmonitoramentoug.gzip"))[lista_colunas_ug]
 
-    vmonitoramentousina = pd.read_parquet(os.path.join(directory,"vmonitoramentousina.gzip"))[lista_colunas_usinas]
+    vmonitoramentousina = pd.read_parquet(os.path.join(download_path,"vmonitoramentousina.gzip"))[lista_colunas_usinas]
 
-    vmonitoramentoleilao = pd.read_parquet(os.path.join(directory,"vmonitoramentoleilao.gzip"))
+    vmonitoramentoleilao = pd.read_parquet(os.path.join(download_path,"vmonitoramentoleilao.gzip"))
 
 
     # Carrega dataframe com informações do previsor
@@ -323,7 +323,7 @@ def calcular_previsao(download_path,previsoes_path,perguntar=False):
     cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina']
     download_db(download_path,force_download=True)
     
-    log = get_log_file(directory)
+    log = get_log_file(download_path)
     file_name = 'Previsao_OC_' + get_standard_file_name(cols_used,log)
     file_name_path = os.path.join(previsoes_path,'Previsao_OC')
     file_name_excel = f'{file_name_path}.xlsx'
@@ -337,7 +337,7 @@ def calcular_previsao(download_path,previsoes_path,perguntar=False):
 
     if necessario_calcular:
         print("Calculando previsão...")
-        result, skate_merged = previsor(directory)
+        result, skate_merged = previsor(download_path)
         if result == "Ok":
             skate_merged.to_parquet(file_name_parquet, index=False,coerce_timestamps='ms',allow_truncated_timestamps= True)
             calculado_nessa_chamada = True
@@ -385,8 +385,8 @@ if __name__ == "__main__":
     hoje =  pd.to_datetime(date.today())
     hoje_str = hoje.strftime(r'%Y_%m_%d')
 
-    directory = download_db(force_download=False, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
+    download_path = download_db(force_download=False, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
 
-    result,df = calcular_previsao(directory)
+    result,df = calcular_previsao(download_path)
     if result == "Ok":
         print(df)

@@ -94,10 +94,11 @@ def menu_principal():
         input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 3:
-        download_db(download_path, force_download=True)
-        atualizar_db(perguntar=True)
+        #download_db(download_path, force_download=True)
+        atualizar_db(download_path,perguntar=True)
         checar_Rapeel(download_path, checar_vrapeelcronograna_path)
         input("Aperte enter para retornar ao menu.")
+        
      
     if opcao_menu == 4: 
         biu(biu_path,download_path)
