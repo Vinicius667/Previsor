@@ -295,6 +295,9 @@ def generate_BIU(biu_download_path, previsao_file, ):
     df_ug = pd.merge(df_ug,ug_rapeel,on=list_id_ug,how='left') # poderia ser inner?
     # Remove usinas que já entraram em operação comercial ou usinas sem UGs monitoradas
     df_ug = df_ug.loc[df_ug.DatLiberOpComerRealizado.isna() & df_ug.NumOperacaoUg.notna()].reset_index(drop=True)
+    
+    # Remove usinas que não possuem nenhuma UG monitorada
+    df_usina = df_usina[df_usina.IdeUsinaOutorga.isin(df_ug.IdeUsinaOutorga)].reset_index(drop=True)
     # Carrega informações do previsor
     
     calculo_previsao = pd.read_parquet(previsao_file)
@@ -550,34 +553,31 @@ def generate_BIU(biu_download_path, previsao_file, ):
 
 
 
+
 ### start export_biu_files ###
-def export_biu_files(biu_path, casos, df_usina, df_ug, ):
+def export_biu_files(biu_download_path, casos, df_usina, df_ug, ):
     cols_ug = ['IdeUsinaOutorga','NumUgUsina','MdaPotenciaUnitaria','PrevisaoOC_regra','Justificativadaprevisao_new','CriterioPrevisao','DscCriterioPrevisao','CalculoPrevisorOC','OC_Obrigacao','PrevisaoOC_rapeel_max','DscJustificativaPrevisaoAtual','DatMonitoramento','DthEnvio','FASE']
     
     cols_revisar_IO = ['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG','DatMonitoramento','DthEnvio']
     
     if 'I' in casos:
      # Caso I
-     file_name = os.path.join(biu_path,f"caso_I.xlsx")
+     file_name = os.path.join(biu_download_path,f"caso_I.xlsx")
      df_ug[df_ug.caso_I][cols_ug].to_excel(file_name,index=False)
     
     # Caso II_a
     if 'II_a' in casos:
-     file_name = os.path.join(biu_path,f"caso_II_a.xlsx")
+     file_name = os.path.join(biu_download_path,f"caso_II_a.xlsx")
      df_usina[df_usina.caso_II_a][cols_revisar_IO].to_excel(file_name,index=False)
     
     if 'BIU' in casos:
      # Caso II-b e III
-     file_name = os.path.join(biu_path,f"BIU.xlsx")
+     file_name = os.path.join(biu_download_path,f"BIU.xlsx")
      df_usina[df_usina.caso_II_b | df_usina.caso_III].to_excel(file_name,index=False)
     
-     file_name = os.path.join(biu_path,f"Usinas_reazer_robot.xlsx")
+     file_name = os.path.join(biu_download_path,f"Usinas_reazer_robot.xlsx")
      df_usina[df_usina.caso_II_a | df_usina.caso_II_b][['IdeUsinaOutorga']].to_excel(file_name,index=False)
 ### end export_biu_files ###
-
-
-
-
 
 
 def biu(biu_path,download_path):
