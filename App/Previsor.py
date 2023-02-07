@@ -21,6 +21,8 @@ root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
 
 # Onde serão salvos os arquivos baixados dos bancos de dados
 download_path = os.path.join(root_path, "Download")
+download_path_partial = os.path.join(download_path, "Partial")
+
 
 # Pasta Previsor/Download_Atual
     # Pode ser modificada por: 
@@ -40,14 +42,15 @@ estagio_I = os.path.join(biu_path, "Estagio_I")
 estagio_II = os.path.join(biu_path, "Estagio_II")
 biu_download_path = os.path.join(biu_path, "Download")
 
-# Onde serão salvos os arquivos da checagem - Não possui pasta downloads - Sempre usa a atual
+
+# Onde serão salvos os arquivos da checagem - Não possui pasta downloads - Sempre usa a atual ou parcial
 checar_rapeel = os.path.join(root_path, "Checar_Rapeel")
+
 
 checar_vrapeelcronograna_path = os.path.join(root_path, "Checar_Rapeel")
 
-
-
 ################################## Funções ##################################
+
 def create_previsor_folders():
     # Cria pastas padrão necessárias
     create_folder(root_path)
@@ -99,7 +102,7 @@ def menu_principal():
         checar_Rapeel(download_path, checar_vrapeelcronograna_path)
         input("Aperte enter para retornar ao menu.")
         
-     
+        
     if opcao_menu == 4: 
         biu(biu_path,download_path)
         input("Aperte enter para retornar ao menu.")
@@ -113,4 +116,3 @@ while (True):
     opcao_menu = menu_principal()
     if opcao_menu == 0:
         break
-

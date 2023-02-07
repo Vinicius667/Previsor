@@ -367,13 +367,6 @@ def calcular_previsao(download_path,previsoes_path,perguntar=False):
     return file_name_parquet
 
 
-        
-
-        
-
-
-
-
 if __name__ == "__main__":
 
     # Muda working directory
