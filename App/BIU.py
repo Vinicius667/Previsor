@@ -618,20 +618,23 @@ def biu(biu_path,download_path):
             "Termino": False
         }
         
-        #download_db(biu_download_path,force_download=True)
-        previsao_file = os.path.join(save_path,"Previsao_OC.gzip") #calcular_previsao(biu_download_path,save_path,perguntar=False)
+        #previsao_file = os.path.join(save_path,"Previsao_OC.gzip")
+        previsao_file = calcular_previsao(biu_download_path,save_path,perguntar=False)
+        
         df_usina,df_ug = generate_BIU(biu_download_path,previsao_file)
 
         export_biu_files(save_path,['I','II_a','BIU'],df_usina,df_ug)
         save_pickle(log,log_biu_file_name)
+        print("Arquivo exportados...")
 
     if option == 2:
         if os.path.exists(log_biu_file_name):
             log = load_pickle(log_biu_file_name)             
             save_path = os.path.join(biu_path,"Estagio_II")
             previus_path = os.path.join(biu_path,"Estagio_I")
-            #download_db(download_path,force_download=True)
-            previsao_file = os.path.join(save_path,"Previsao_OC.gzip") # calcular_previsao(download_path,save_path)
+            #previsao_file = os.path.join(save_path,"Previsao_OC.gzip") # calcular_previsao(download_path,save_path)
+            previsao_file = calcular_previsao(download_path,save_path,perguntar=False)
+            
             df_usina,df_ug = generate_BIU(download_path,previsao_file)
 
             usinas_refazer_robot = pd.read_excel(os.path.join(previus_path,f"Usinas_reazer_robot.xlsx"))
@@ -648,11 +651,12 @@ def biu(biu_path,download_path):
         
             export_biu_files(save_path,['I'],df_usina,df_ug)
             log["Termino"] = datetime.now()
+            log['Terminado'] == True
+
             save_pickle(log,log_biu_file_name)
             print("Arquivo exportados...")
         else:
             print("Estagio I ainda não realizado.")
-
 
 
 if __name__ == '__main__':

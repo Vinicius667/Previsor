@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import date,datetime
 import os
 from utils import *
+import shutil
+
 
 """
 Cria as conexões com o banco de dados skate e baixa as tabelas vMonitoramentoLeilao, vMonitoramentoUG e
@@ -15,8 +17,8 @@ server = 'SAG003\SBD172'
 database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
 biu_download_cols  = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
-
-
+TESTE = True
+TESTE_DIR = './Teste_files'
 
 def atualizar_db(download_path,cols=False,perguntar=False):
     if not cols:
@@ -49,11 +51,12 @@ def atualizar_db(download_path,cols=False,perguntar=False):
             atualizar = False
 
     if atualizar:
-        download_db(download_path,lista_download=cols,force_download=True)
+        download_db(download_path,lista_download=cols)
         return True
     return False
 
-def download_db(download_path = None, queries_path = None, lista_download = biu_download_cols,force_download=True):
+def download_db(download_path = None, queries_path = None, lista_download = biu_download_cols,test=TESTE):
+    
     print("\n" + " Baixando arquivos ".center(60, "*") + "\n")
     if not download_path:
         root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
@@ -80,10 +83,10 @@ def download_db(download_path = None, queries_path = None, lista_download = biu_
 
 
     # Baixa informações, caso já não tenham sido baixadas
-    for db_name in lista_download:
-        print(os.path.join(queries_path,f"{db_name}.txt"))
-        file_path = f"{download_directory}/{db_name}.gzip"
-        if (not os.path.exists(file_path)) or force_download:
+    if not test:
+        for db_name in lista_download:
+            print(os.path.join(queries_path,f"{db_name}.txt"))
+            file_path = f"{download_directory}/{db_name}.gzip"
             query =  read_file(os.path.join(queries_path,f"{db_name}.txt"))
             db = pd.read_sql_query(query,skate_engine)
             log[db_name] = datetime.now()       
@@ -96,11 +99,19 @@ def download_db(download_path = None, queries_path = None, lista_download = biu_
                     db[col] = db[col].astype(int)
             db.to_parquet(file_path)
             print(f"'{db_name}.gzip' salvo em '{download_directory}'.")
-        else:
-            print(f"{db_name} já foi baixado no dia: {log[db_name].strftime('Dia: %d/%m/%y - Horário: %H:%M:%S')}. Portanto não foi baixado novamente.")
-    save_pickle(log,log_path)
+        save_pickle(log,log_path)
+    else:
+        print(f"Movendo arquivos de teste:")
+        for db_name in lista_download:
+            file_path = f"{download_directory}/{db_name}.gzip"
+            file_path_test = os.path.join(TESTE_DIR,f'{db_name}.gzip')
+            print(f"{file_path_test} >>> {file_path}")
 
-    
+            shutil.copyfile(file_path_test,file_path)
+
+        log_path_test = os.path.join(TESTE_DIR,'log.pickle')
+        shutil.copyfile(log_path_test,log_path)
+
     print("\n" + "*".center(60, "*") + "\n")
     return download_directory
 
@@ -125,4 +136,4 @@ if __name__ == "__main__":
     # Caminho da pasta dos resultados das previsões
     previsoes_path = os.path.join(root_path,"Previsoes")
 
-    download_directory = download_db(download_path,force_download=True, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])
+    download_directory = download_db(download_path, lista_download=["vmonitoramentoleilao","vmonitoramentoug" ,"vmonitoramentousina"])

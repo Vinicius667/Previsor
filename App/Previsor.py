@@ -2,7 +2,10 @@ import os
 
 # Caso o escript esteja sendo executado a partir de outro diretório
 # muda o working directory para o caminho do script
-os.chdir(os.path.dirname(__file__))
+
+#os.chdir(os.path.dirname(__file__))
+
+print(os.getcwd())
 
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db,atualizar_db
@@ -15,9 +18,9 @@ import psutil
 from datetime import date
 
 # Caminho onde serão salvos os arquivos
-#root_path = r"S:\BD\SKATE\BIU\Python"
-#if not os.path.exists(root_path):
-root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
+root_path = r"S:\BD\SKATE\BIU\Python"
+if not os.path.exists(root_path):
+    root_path = os.path.join(get_standard_folder_path("Documents"), "Previsor")
 
 # Onde serão salvos os arquivos baixados dos bancos de dados
 download_path = os.path.join(root_path, "Download")
@@ -33,7 +36,6 @@ download_path_partial = os.path.join(download_path, "Partial")
 
 # Onde serão salvas as previsões
 previsoes_path = os.path.join(root_path, "Previsoes")
-
 
 
 # Onde serão salvos os arquivos do BIU
@@ -93,11 +95,11 @@ def menu_principal():
         input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 2:
-        download_db(download_path, force_download=True)
+        download_db(download_path)
         input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 3:
-        #download_db(download_path, force_download=True)
+        #download_db(download_path)
         atualizar_db(download_path,perguntar=True)
         checar_Rapeel(download_path, checar_vrapeelcronograna_path)
         input("Aperte enter para retornar ao menu.")

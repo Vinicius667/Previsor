@@ -321,7 +321,8 @@ def previsor(download_path):
 
 def calcular_previsao(download_path,previsoes_path,perguntar=False):
     cols_used = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina']
-    download_db(download_path,force_download=True)
+
+    atualizar_db(download_path,perguntar=perguntar)
     
     log = get_log_file(download_path)
     file_name = 'Previsao_OC_' + get_standard_file_name(cols_used,log)
@@ -330,10 +331,6 @@ def calcular_previsao(download_path,previsoes_path,perguntar=False):
     file_name_parquet = f'{file_name_path}.gzip'
     necessario_calcular = True
     calculado_nessa_chamada = False
-
-    #if((os.path.exists(file_name_parquet))):
-    #   print("Previsão já calculada com os arquivos baixados anteriormente.")
-    #    necessario_calcular = False
 
     if necessario_calcular:
         print("Calculando previsão...")
