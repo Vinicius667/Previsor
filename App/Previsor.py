@@ -5,7 +5,6 @@ import os
 
 #os.chdir(os.path.dirname(__file__))
 
-print(os.getcwd())
 
 from Calcular_Previsao import calcular_previsao
 from download_DB import download_db,atualizar_db
@@ -16,6 +15,8 @@ import sys
 from utils import *
 import psutil
 from datetime import date
+import glob
+import shutil
 
 # Caminho onde serão salvos os arquivos
 root_path = r"S:\BD\SKATE\BIU\Python"
