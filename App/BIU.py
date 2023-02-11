@@ -658,10 +658,9 @@ def export_biu_files(biu_download_path, casos, df_usina, df_ug, ):
 ### end export_biu_files ###
 
 
+ 
 
-
-
-
+dfdfd
 def biu(biu_path,download_path):
     log_biu_file_name = os.path.join(biu_path,'biu_log.pickle')
 
