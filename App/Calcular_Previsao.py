@@ -5,11 +5,13 @@ from scipy.stats import norm
 from datetime import date
 from utils import *
 import psutil
+from datetime import date,datetime,timedelta
 
 
 def previsor(download_path):
     hoje =  pd.to_datetime(date.today())
     hoje_str = hoje.strftime(r'%Y_%m_%d')
+    final_do_mes = pd.to_datetime(datetime(hoje.year,hoje.month+1,1) - timedelta(seconds=1))
 
     lista_colunas_usinas = [
     'IdeUsinaOutorga',
@@ -70,6 +72,11 @@ def previsor(download_path):
 
     # Junta informações de referentes às usinas com informações referentes às UGs
     skate_merged = vmonitoramentoug.merge(vmonitoramentousina,on="IdeUsinaOutorga",how="left")
+
+    skate_merged = pd.merge(skate_merged,
+    tabela_previsor[(tabela_previsor.Fase == 'OT_OC') & (tabela_previsor.Comercialização == 'Ambos')][['Tipo de geração','Media_Fase']].rename(
+    columns={'Tipo de geração':'SigTipoGeracao','Media_Fase':'Media_Fase_OT'}),
+    on='SigTipoGeracao')
 
     df_acr_sem_leilao = skate_merged[(skate_merged.DscComercializacaoEnergia=="ACR") &  (skate_merged.DatInicioSuprimento.isna())]
 
@@ -227,11 +234,9 @@ def previsor(download_path):
                 
 
 
-
     skate_merged.MarcoMedioAtual = pd.to_datetime(skate_merged.MarcoMedioAtual)
     skate_merged.MarcoMedioProximo = pd.to_datetime(skate_merged.MarcoMedioProximo)
     skate_merged.DataMarcoAtual = pd.to_datetime(skate_merged.DataMarcoAtual)
-
 
 
     skate_merged["AtrasoMarcoAtual"] =  skate_merged.DataMarcoAtual - skate_merged.MarcoMedioAtual
@@ -263,19 +268,14 @@ def previsor(download_path):
     del skate_merged["Fase"]
 
 
-
     # Calcula-se previsões OC baseadas no marco atual e próximo
     skate_merged["Previsao_OC_atual"] = skate_merged["Dat_OC_obrigacao"] + (skate_merged["AtrasoMarcoAtual"] * skate_merged["a_atual"]) + (skate_merged["b_atual"] * pd.to_timedelta(1, unit='D'))
     skate_merged["Previsao_OC_proximo"] = skate_merged["Dat_OC_obrigacao"] +( skate_merged["AtrasoMarcoProximo"] * skate_merged["a_proximo"]) + (skate_merged["b_proximo"] * pd.to_timedelta(1, unit='D'))
 
 
     # Define qual é a previsão OC definitiva
-    # Por padrão é a previsão OC com base no marco atual
-    skate_merged["Previsao_OC"] = skate_merged["Previsao_OC_atual"] 
-
-    # Caso o atraso do próximo marco for maior que o atraso do marco atual, usa-se a previsão baseada no marco próximo
-    mask_previsao_proximo = skate_merged.AtrasoMarcoProximo >=   skate_merged.AtrasoMarcoAtual
-    skate_merged.loc[mask_previsao_proximo,"Previsao_OC"] = skate_merged["Previsao_OC_proximo"]
+    # Por padrão é a previsão OC maior entre previsão atual e próxima
+    skate_merged["Previsao_OC"] = skate_merged[["Previsao_OC_atual",'Previsao_OC_proximo']].max(axis=1) 
 
 
     indicador_atual = 100 * pd.Series(1 - norm.cdf((skate_merged.AtrasoMarcoAtual - skate_merged.Media_Atraso_atual)/skate_merged.Std_Atraso_atual))
@@ -286,11 +286,15 @@ def previsor(download_path):
     indicador_proximo.index = skate_merged.index
     skate_merged["IndicadorProximo"] = indicador_proximo
 
+    skate_merged["Indicador"] = skate_merged['IndicadorAtual']
+    skate_merged.loc[skate_merged.Previsao_OC == skate_merged.Previsao_OC_proximo,'Indicador'] = skate_merged.IndicadorProximo
 
-    skate_merged["Indicador"] = skate_merged["IndicadorAtual"]
-    skate_merged.loc[mask_previsao_proximo,"Indicador"] = skate_merged["IndicadorProximo"]
 
+    skate_merged['ErroPrevisao'] = False
+    skate_merged.loc[(skate_merged.Previsao_OC < final_do_mes),'ErroPrevisao'] = True
+    skate_merged.loc[(skate_merged.FaseAtual != 'OT_OC') & (skate_merged.Previsao_OC < (hoje +  skate_merged.Media_Fase_OT)),'ErroPrevisao'] = True
 
+    
     # Após calculada a previsão, pode-se retornar a fase correta para aquelas usinas que estão em OUT_OC
     skate_merged.loc[skate_merged.FaseAtual==skate_merged.ProximaFase,"FaseAtual"] = "OUT_OC"
     skate_merged.loc[skate_merged.FaseAtual=="OUT_OC","Indicador"] = pd.NA
@@ -301,7 +305,7 @@ def previsor(download_path):
 
 
     # Usinas que estão em teste e a previsão está no passado, muda previsão para os próximos 60 dias
-    skate_merged.loc[(skate_merged.Previsao_OC < hoje) & (skate_merged.FaseAtual== "OT_OC"),"Previsao_OC"] = hoje + pd.Timedelta(60,"D")
+    #skate_merged.loc[(skate_merged.Previsao_OC < hoje) & (skate_merged.FaseAtual== "OT_OC"),"Previsao_OC"] = hoje + pd.Timedelta(60,"D")
 
 
     # Usinas cuja previsão OC esteja no passado e exista previsão OC para o próximo marco, usa-se a última

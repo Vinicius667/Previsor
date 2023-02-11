@@ -122,6 +122,7 @@ def read_file(path: str,encoding = "utf-8"):
     # Lê arquivo
     with open(path, 'r', encoding = encoding) as f:
         lines = "".join(f.readlines())
+        #lines = f.readlines()
     return lines
 
 

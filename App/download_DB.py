@@ -17,7 +17,7 @@ server = 'SAG003\SBD172'
 database = 'FiscalizacaoGeracao'
 skate_engine = create_odbc_engine(server,database)
 biu_download_cols  = ['vmonitoramentoleilao', 'vmonitoramentoug', 'vmonitoramentousina', 'vrapeelacesso', 'vrapeelcontratorecurso', 'vrapeelcronograma', 'vrapeelempreendimento', 'vrapeellicenciamento', 'vrapeeloperacaoug']
-TESTE = True
+TESTE = False
 TESTE_DIR = './Teste_files'
 
 def atualizar_db(download_path,cols=False,perguntar=False):

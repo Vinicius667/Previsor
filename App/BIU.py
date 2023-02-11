@@ -261,8 +261,9 @@ def generate_BIU(biu_download_path, previsao_file, ):
      default = False)
     cols = ['IdeUsinaOutorga', 'NomUsina','prev_IO_SFG','prev_IO_rapeel','revisar_IO']
     
-    usinas_selecionadas = read_file("./usinas_selecionadas.txt").split(",")
-    usinas_selecionadas = [int(num) for num in usinas_selecionadas]
+    usinas_selecionadas = read_file("./usinas_selecionadas.txt").split(",\n")
+    usinas_selecionadas = [int(num.replace('\n','')) for num in usinas_selecionadas]
+
     df_usina["Usina_Selecionada"] = False
     df_usina.loc[df_usina.IdeUsinaOutorga.isin(usinas_selecionadas),'Usina_Selecionada'] = True
     
@@ -276,13 +277,13 @@ def generate_BIU(biu_download_path, previsao_file, ):
     
     # Informações de UGs
     ## Carrega banco de dados
-    cols = ["IdeUsinaOutorga",'NumUgUsina',"IdcMonitorada",'DatLiberOpComerRealizado','DatPrevisaoSFGComercial']
+    cols = ["IdeUsinaOutorga",'NumUgUsina',"IdcMonitorada",'DatLiberOpComerRealizado','DatPrevisaoSFGComercial',]
     monitoramentoug = pd.read_parquet(os.path.join(biu_download_path,"vmonitoramentoug.gzip"))[cols].rename(columns={'NumUgUsina':'NumOperacaoUg'})
     # Não remover ugs não monitoradas nesse passo, pois serão usadas para encontrar ugs difentes entre
     # monitoramento e rapeel. São retiradas durante o merge
     monitoramentoug.IdcMonitorada = monitoramentoug.IdcMonitorada.map({"Sim":True,"Não":False}).astype(bool)
     
-    
+    #
     cols = ["IdeUsinaOutorga",'NumOperacaoUg',"DthEnvio",'DatPrevistaComercial']
     ug_rapeel = pd.read_parquet(os.path.join(biu_download_path,"vrapeeloperacaoug.gzip"))[cols]
     ug_rapeel = ultimo_rapeel(ug_rapeel)
@@ -384,36 +385,49 @@ def generate_BIU(biu_download_path, previsao_file, ):
     
     df_ug['criterio_novo_pmo'] = np.select(list_condicoes,list_values)
     
-    ################################ regranovapmo ################################
-    df_ug.loc[(df_ug.criterio_novo_pmo == 0.1),'regranovapmo'] = df_ug[['DatPrevistaComercial','calculo_previsor_OC']].max(axis=1)
+    ################################ regra_nova_pmo ################################
+    df_ug.loc[(df_ug.criterio_novo_pmo.isin([0.1,0.3])),'regra_nova_pmo'] = df_ug[['DatPrevistaComercial','calculo_previsor_OC']].max(axis=1)
     
-    df_ug.loc[(df_ug.criterio_novo_pmo == 0.2),'regranovapmo'] = ( hoje + pd.Timedelta(60,"D"))
-    
-    
-    df_ug.loc[(df_ug.criterio_novo_pmo == 0.3) & (df_ug['calculo_previsor_OC'].isna()),'regranovapmo'] = df_ug['DatPrevistaComercial']
+    df_ug.loc[(df_ug.criterio_novo_pmo == 0.2),'regra_nova_pmo'] = ( hoje + pd.Timedelta(60,"D"))
     
     
-    df_ug.loc[(df_ug['criterio_novo'] == 0) & (df_ug['FASE'] == "OT") & (df_ug['calculo_previsor_OC'].notna()),'regranovapmo'] = df_ug['calculo_previsor_OC']
-    
-    
-    df_ug.loc[(df_ug['criterio_novo']== 1) | (df_ug['criterio_novo']== 2) ,'regranovapmo'] = df_ug[['DatPrevistaComercial','calculo_previsor_OC','Dat_OC_obrigacao']].max(axis=1)
+    df_ug.loc[(df_ug['criterio_novo']== 1) | (df_ug['criterio_novo']== 2) ,'regra_nova_pmo'] = df_ug[['DatPrevistaComercial','calculo_previsor_OC','Dat_OC_obrigacao']].max(axis=1)
     
     df_ug["Handicap"] = hoje + pd.Timedelta(5*365,'D')
-    df_ug.loc[((df_ug['criterio_novo'] == 3) | (df_ug['criterio_novo'] == 4) | (df_ug['criterio_novo'] == 5) ),'regranovapmo'] = df_ug[['DatPrevistaComercial','calculo_previsor_OC','Dat_OC_obrigacao','Handicap']].max(axis=1)
+    df_ug.loc[(df_ug.criterio_novo_pmo.isin([3,4,5])),'regra_nova_pmo'] = df_ug[['DatPrevistaComercial','calculo_previsor_OC','Dat_OC_obrigacao','Handicap']].max(axis=1)
     
-    
-    df_ug.loc[df_ug['criterio_novo']== 6,'regranovapmo'] = pd.NA
+    df_ug.loc[df_ug['criterio_novo']== 6,'regra_nova_pmo'] = pd.NA
     
     df_ug["Handicap"] = hoje + pd.Timedelta(6*365,'D')
+    df_ug.loc[df_ug['criterio_novo']== 7,'regra_nova_pmo'] = df_ug[['calculo_previsor_OC','Dat_OC_obrigacao','Handicap']].max(axis=1)
     
-    df_ug.loc[df_ug['criterio_novo']== 7,'regranovapmo'] = df_ug[['calculo_previsor_OC','Dat_OC_obrigacao','Handicap']].max(axis=1)
+    df_ug.loc[df_ug['criterio_novo']== 8,'regra_nova_pmo'] = df_ug[['DatPrevistaComercial','Dat_OC_obrigacao']].max(axis=1)
     
-    
-    df_ug.loc[df_ug['criterio_novo']== 8,'regranovapmo'] = df_ug[['DatPrevistaComercial','Dat_OC_obrigacao']].max(axis=1)
-    
-    df_ug.loc[(df_ug['criterio_novo'] == 9),'regranovapmo'] = pd.NA
+    df_ug.loc[(df_ug['criterio_novo'] == 9),'regra_nova_pmo'] = pd.NA
     
     del df_ug['Handicap']
+    df_ug['prev_OC_manual'] = False
+    mask_OC_fail = (df_ug.regra_nova_pmo < final_do_mes) | (df_ug.regra_nova_pmo.isna())
+    df_ug.loc[mask_OC_fail,'prev_OC_manual'] = True
+    df_ug.loc[mask_OC_fail,'regra_nova_pmo'] = pd.NA
+    
+    df_ug['escolha_regra_nova_pmo'] = 'Handicap'
+    df_ug.loc[df_ug.regra_nova_pmo == 6,'escolha_regra_nova_pmo'] = 'Sem Licenciamento'
+    df_ug.loc[df_ug.regra_nova_pmo == 9,'escolha_regra_nova_pmo'] = 'Inviabilidade da usina'
+    
+    
+    dict = {
+     'calculo_previsor_OC': 'Previsor',
+     'Dat_OC_obrigacao': 'Obrigação',
+     'DatPrevistaComercial':'Previsão do agente'
+    }
+    
+    for col,dsc in dict.items():
+     df_ug.loc[df_ug.regra_nova_pmo == df_ug[col],'escolha_regra_nova_pmo'] = dsc
+    
+    df_ug.loc[df_ug.regra_nova_pmo == (hoje + pd.Timedelta(60,"D")) ,'escolha_regra_nova_pmo'] = '60 dias'
+    
+    df_ug.loc[mask_OC_fail,'escolha_regra_nova_pmo'] = 'Análise do Fiscal'
     serie_usinas_previsao_OC_passado = df_ug[df_ug.DatPrevisaoSFGComercial < final_do_mes].IdeUsinaOutorga.drop_duplicates()
     
     serie_usinas_previsao_em_teste = df_ug[df_ug.criterio_novo_pmo.isin([0.2,0.3])].IdeUsinaOutorga.drop_duplicates()
@@ -423,6 +437,10 @@ def generate_BIU(biu_download_path, previsao_file, ):
     df_usina.loc[df_usina.IdeUsinaOutorga.isin(serie_flagOPTeste30dias),'flagOPTeste30dias'] = True
     
     serie_UG_sem_rapeel = df_ug[df_ug.UG_sem_rapeel].IdeUsinaOutorga.drop_duplicates()
+    
+    
+    serie_UG_prev_OC_manual = df_ug[df_ug.prev_OC_manual].IdeUsinaOutorga.drop_duplicates()
+    
     df_usina["UG_sem_rapeel"] = False
     df_usina.loc[df_usina.IdeUsinaOutorga.isin(serie_UG_sem_rapeel),'UG_sem_rapeel'] = True
     
@@ -437,9 +455,14 @@ def generate_BIU(biu_download_path, previsao_file, ):
     
     df_usina["sem_monitoramento"] = False
     df_usina.loc[df_usina.DatMonitoramento < (hoje - pd.Timedelta(4*30, unit="D")),'sem_monitoramento'] = True
+    
+    df_usina["prev_OC_manual"] = False
+    df_usina.loc[df_usina.IdeUsinaOutorga.isin(serie_UG_prev_OC_manual),'prev_OC_manual'] = True
+    
+    df_usina.loc[df_usina.prev_OC_manual,'regra_nova_pmo'] = pd.NA
     df_usina["manual"] = False
     df_usina.loc[(df_usina.Paralisada | df_usina.Sem_Previsao |
-     df_usina.Usina_Selecionada | df_usina.em_teste |
+     df_usina.Usina_Selecionada | df_usina.em_teste | df_usina.prev_OC_manual |
      (df_usina.DscJustificativaPrevisao == 'Situação das obras de conexão e linha de transmissão associada.')),
      'manual'] = True
     # Casos de seleção
@@ -451,7 +474,7 @@ def generate_BIU(biu_download_path, previsao_file, ):
     
     df_usina['caso_II_a'] = (~df_usina.manual) & (df_usina.revisar_IO) & (~ df_usina.homologar_marcos)
     
-    df_usina['caso_II_b'] = (~df_usina.manual) & ((df_usina.homologar_marcos) | (df_usina.homologar_marcos & df_usina.revisar_IO))
+    df_usina['caso_II_b'] = (~df_usina.manual) & df_usina.homologar_marcos
     
     df_usina['caso_III'] = (df_usina.manual & (df_usina.sem_monitoramento | df_usina.homologar_marcos | df_usina.revisar_IO | df_usina.prev_OC_SFG_passado)) | df_usina.em_teste
     
@@ -491,7 +514,7 @@ def generate_BIU(biu_download_path, previsao_file, ):
     
     df_usina_criterio['dsc_justificativa_regra_nova'] = np.select(list_condicoes,list_values)
     
-    ################################ dsccriterionovo ################################
+    ################################ dsc_criterio_novo ################################
     list_condicoes = [
      ((df_usina_criterio['criterio_novo'] == 9)),
      ((df_usina_criterio['criterio_novo'] == 0) & (df_usina_criterio['FASE'] != "OT")),
@@ -520,31 +543,51 @@ def generate_BIU(biu_download_path, previsao_file, ):
      "Usina sem obras, sem PPA e sem RAPEEL = Previsão OC handicap de 5 anos",
      "Usina sem LP = Previsão OC sem previsão","Usina obras paralisadas = Previsão OC maior entre data RAPEEL e data compromisso"
     ]
-    df_usina_criterio['dsccriterionovo'] = np.select(list_condicoes,list_values)
-    list_justificativas = ['dsccriterionovo','dsc_justificativa_regra_nova']
+    df_usina_criterio['dsc_criterio_novo'] = np.select(list_condicoes,list_values)
+    list_justificativas = ['dsc_criterio_novo','dsc_justificativa_regra_nova']
+    df_ug['FASE_order'] = 0
+    df_ug['FASE_order'] = df_ug.FASE.map({
+     'OUT' : 0,
+     'IO': 1,
+     'CC': 2,
+     'ME': 3,
+     'OT': 4
+    })
+    
     df_usina = pd.merge(df_usina,
-    df_usina_criterio[['IdeUsinaOutorga','criterio_novo_pmo'] + list_justificativas],
+     df_ug.loc[df_ug[df_ug.FASE.notna()].groupby('IdeUsinaOutorga').FASE_order.idxmax()][['IdeUsinaOutorga','FASE']].rename(columns= {'FASE':'fase_max'}),
+     on='IdeUsinaOutorga',how='left')
+    
+    
+    df_usina = pd.merge(df_usina,
+     df_ug.loc[df_ug[df_ug.DatPrevisaoSFGComercial.notna()].groupby('IdeUsinaOutorga').DatPrevisaoSFGComercial.idxmax()][['IdeUsinaOutorga','DatPrevisaoSFGComercial']].rename(columns= {'DatPrevisaoSFGComercial':'prev_atual'}),
+     on='IdeUsinaOutorga',how='left')
+    
+    df_usina = pd.merge(df_usina,
+    df_usina_criterio[['IdeUsinaOutorga','criterio_novo_pmo'] + list_justificativas].rename(columns={'criterio_novo_pmo' : 'criterio_novo_pmo_max'}),
     on = "IdeUsinaOutorga", how='left')
     
     
+    df_usina = pd.merge(df_usina,
+     df_ug.loc[df_ug[df_ug.DatPrevistaComercial.notna()].groupby('IdeUsinaOutorga').DatPrevistaComercial.idxmax()][['IdeUsinaOutorga','DatPrevistaComercial']].rename(columns= {'DatPrevistaComercial':'DatPrevistaComercial_max'}),
+     on='IdeUsinaOutorga',how='left')
+    
+    df_usina = pd.merge(df_usina,
+     df_ug.loc[df_ug[df_ug.calculo_previsor_OC.notna()].groupby('IdeUsinaOutorga').calculo_previsor_OC.idxmax()][['IdeUsinaOutorga','calculo_previsor_OC']].rename(columns= {'calculo_previsor_OC':'calculo_previsor_OC_max'}),
+     on='IdeUsinaOutorga',how='left')
+    
+    df_usina = pd.merge(df_usina,
+     df_ug.loc[df_ug[df_ug.Dat_OC_obrigacao.notna()].groupby('IdeUsinaOutorga').Dat_OC_obrigacao.idxmax()][['IdeUsinaOutorga','Dat_OC_obrigacao']].rename(columns= {'Dat_OC_obrigacao':'Dat_OC_obrigacao_max'}),
+     on='IdeUsinaOutorga',how='left')
+    
+    
+    df_usina = pd.merge(df_usina,
+     df_ug.loc[df_ug[df_ug.FASE.notna()].groupby('IdeUsinaOutorga').FASE_order.idxmax()][['IdeUsinaOutorga','regra_nova_pmo','escolha_regra_nova_pmo']].rename(columns= {'regra_nova_pmo':'regra_nova_pmo_max'}),
+     on='IdeUsinaOutorga',how='left')
+    
+    
     list_casos = ['caso_I','caso_II_a','caso_II_b','caso_III','selecionado_BIU']
-    df_ug = pd.merge(df_usina[['IdeUsinaOutorga','dsc_justificativa_regra_nova','dsccriterionovo','DatMonitoramento','DscJustificativaPrevisao'] + list_casos],df_ug, on = "IdeUsinaOutorga",how='left')
-    # Renomeia colunas para exportação
-    dic = {
-     'NumOperacaoUg':'NumUgUsina',
-     'regranovapmo': 'PrevisaoOC_regra',
-     'dsc_justificativa_regra_nova' : 'Justificativadaprevisao_new',
-     'criterio_novo_pmo' : 'CriterioPrevisao',
-     'dsccriterionovo':'DscCriterioPrevisao',
-     'Previsao_OC':'CalculoPrevisorOC',
-     'Dat_OC_obrigacao':'OC_Obrigacao',
-     'DscJustificativaPrevisao':'DscJustificativaPrevisaoAtual',
-     'calculo_previsor_OC':'CalculoPrevisorOC'
-    }
-    
-    
-    df_ug = df_ug.rename(columns=dic)
-    df_usina = df_usina.rename(columns=dic)
+    df_ug = pd.merge(df_usina[['IdeUsinaOutorga','dsc_justificativa_regra_nova','dsc_criterio_novo','DatMonitoramento','DscJustificativaPrevisao'] + list_casos],df_ug, on = "IdeUsinaOutorga",how='left')
     return (df_usina,df_ug)
     
 ### end generate_BIU ###
@@ -552,32 +595,71 @@ def generate_BIU(biu_download_path, previsao_file, ):
 
 
 
-
-
 ### start export_biu_files ###
 def export_biu_files(biu_download_path, casos, df_usina, df_ug, ):
-    cols_ug = ['IdeUsinaOutorga','NumUgUsina','MdaPotenciaUnitaria','PrevisaoOC_regra','Justificativadaprevisao_new','CriterioPrevisao','DscCriterioPrevisao','CalculoPrevisorOC','OC_Obrigacao','PrevisaoOC_rapeel_max','DscJustificativaPrevisaoAtual','DatMonitoramento','DthEnvio','FASE']
+    cols_caso_I = ['IdeUsinaOutorga','NumOperacaoUg','regra_nova_pmo','dsc_justificativa_regra_nova','dsc_criterio_novo']
     
-    cols_revisar_IO = ['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG','DatMonitoramento','DthEnvio']
+    cols_caso_II_a = ['IdeUsinaOutorga','DatInicioObraOutorgado','prev_IO_rapeel','prev_IO_SFG']
+    
+    cols_caso_BIU = ['IdeUsinaOutorga','SigTipoGeracao','NomUsina','manual','regra_nova_pmo_max','dsc_justificativa_regra_nova',
+    'escolha_regra_nova_pmo','criterio_novo_pmo_max','dsc_criterio_novo','dsc_marcos_a_homologar',
+    'homologar_marcos','revisar_IO','prev_OC_SFG_passado','em_teste','sem_monitoramento','prev_OC_manual','fase_max','DatPrevistaComercial_max',
+    'calculo_previsor_OC_max','Dat_OC_obrigacao_max','prev_IO_SFG','prev_IO_rapeel','DatInicioObraOutorgado','prev_atual',
+    'DatMonitoramento','DthEnvio']
+    
+    
+    # Renomeia colunas para exportação
+    
+    
+    dic = {
+     'prev_atual': "PrevOC_Atual",
+     'prev_OC_manual': 'PrevOCMmanual',
+     'prev_OC_SFG_passado': "RevisarOC",
+     'em_teste': 'EmTeste',
+     'sem_monitoramento': 'MuitoTempoSemMonitorar',
+     'NumOperacaoUg':'NumUgUsina',
+     'fase_max' : 'Fase Atual',
+     'regra_nova_pmo': 'PrevisaoOC_regra',
+     'regra_nova_pmo_max' : 'PrevisaoOC_regra',
+     'dsc_justificativa_regra_nova' : 'Justificativadaprevisao_new',
+     'criterio_novo_pmo_max' : 'CriterioNovoPMO',
+     'dsc_criterio_novo':'DscCriterioPrevisao',
+     'Dat_OC_obrigacao':'OC_Obrigacao',
+     'DscJustificativaPrevisao':'DscJustificativaPrevisaoAtual',
+     'calculo_previsor_OC':'CalculoPrevisorOC',
+     'homologar_marcos': 'Homologar Marcos',
+     'dsc_marcos_a_homologar': "Marcos a Homologar",
+     'manual': 'Manual',
+     'DatPrevistaComercial_max': "Previsão do agente max",
+     'calculo_previsor_OC_max':'Previsor max',
+     'Dat_OC_obrigacao_max': 'Obrigação max',
+     'escolha_regra_nova_pmo': 'EscolhaRegraPMO',
+     'revisar_IO': 'Revisar IO'
+    }
+    
     
     if 'I' in casos:
      # Caso I
-     file_name = os.path.join(biu_download_path,f"caso_I.xlsx")
-     df_ug[df_ug.caso_I][cols_ug].to_excel(file_name,index=False)
+     file_name = os.path.join(biu_download_path,f"caso_I.csv")
+     df_ug[df_ug.caso_I][cols_caso_I].rename(columns=dic).to_csv(file_name,index=False)
     
     # Caso II_a
     if 'II_a' in casos:
-     file_name = os.path.join(biu_download_path,f"caso_II_a.xlsx")
-     df_usina[df_usina.caso_II_a][cols_revisar_IO].to_excel(file_name,index=False)
+     file_name = os.path.join(biu_download_path,f"caso_II__a.csv")
+     df_usina[df_usina.caso_II_a][cols_caso_II_a].rename(columns=dic).to_csv(file_name,index=False)
     
     if 'BIU' in casos:
      # Caso II-b e III
      file_name = os.path.join(biu_download_path,f"BIU.xlsx")
-     df_usina[df_usina.caso_II_b | df_usina.caso_III].to_excel(file_name,index=False)
+     df_usina[df_usina.caso_II_b | df_usina.caso_III][cols_caso_BIU].rename(columns=dic).to_excel(file_name,index=False)
     
-     file_name = os.path.join(biu_download_path,f"Usinas_reazer_robot.xlsx")
+     file_name = os.path.join(biu_download_path,f"Usinas_refazer_robot.xlsx")
      df_usina[df_usina.caso_II_a | df_usina.caso_II_b][['IdeUsinaOutorga']].to_excel(file_name,index=False)
 ### end export_biu_files ###
+
+
+
+
 
 
 def biu(biu_path,download_path):

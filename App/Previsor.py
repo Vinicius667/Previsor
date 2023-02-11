@@ -10,6 +10,7 @@ from Calcular_Previsao import calcular_previsao
 from download_DB import download_db,atualizar_db
 from checar_rapeel import checar_Rapeel
 from BIU import biu
+
 import pandas as pd
 import sys
 from utils import *
@@ -47,9 +48,6 @@ biu_download_path = os.path.join(biu_path, "Download")
 
 
 # Onde serão salvos os arquivos da checagem - Não possui pasta downloads - Sempre usa a atual ou parcial
-checar_rapeel = os.path.join(root_path, "Checar_Rapeel")
-
-
 checar_vrapeelcronograna_path = os.path.join(root_path, "Checar_Rapeel")
 
 ################################## Funções ##################################
@@ -58,6 +56,7 @@ def create_previsor_folders():
     # Cria pastas padrão necessárias
     create_folder(root_path)
     create_folder(download_path)
+    create_folder(download_path_partial)
     create_folder(previsoes_path)
     create_folder(checar_vrapeelcronograna_path)
     create_folder(biu_path)
@@ -75,7 +74,7 @@ def menu_principal():
         0: "Sair",
         1: "Calcular previsão da base de dados",
         2: "Atualizar base de dados",
-        3: "Checar Rapeel",
+        3: "Checar BIU",
         4: "Gerar BIU"
 
     }
@@ -91,7 +90,6 @@ def menu_principal():
         return 0
 
     if opcao_menu == 1:
-        clear_console()
         calcular_previsao(download_path,previsoes_path,perguntar=True)
         input("Aperte enter para retornar ao menu.")
 
@@ -100,9 +98,7 @@ def menu_principal():
         input("Aperte enter para retornar ao menu.")
 
     if opcao_menu == 3:
-        #download_db(download_path)
-        atualizar_db(download_path,perguntar=True)
-        checar_Rapeel(download_path, checar_vrapeelcronograna_path)
+        checar_Rapeel(download_path, checar_vrapeelcronograna_path,estagio_I )
         input("Aperte enter para retornar ao menu.")
         
         
@@ -113,7 +109,6 @@ def menu_principal():
     return opcao_menu
 
 #############################################################################
-clear_console()
 create_previsor_folders()
 while (True):
     opcao_menu = menu_principal()
